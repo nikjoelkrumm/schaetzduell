@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../state/AuthContext";
-import { getMyLeague, listFriends, redeemInvite, type LeagueInfo, type FriendItem } from "../lib/db";
+import { getMyLeague, listFriendData, redeemInvite, respondFriendRequest, type LeagueInfo, type FriendData } from "../lib/db";
 import { Avatar, initialsOf } from "../components/ui";
 
 const TIER_LABEL: Record<string, string> = {
@@ -11,23 +11,30 @@ const TIER_LABEL: Record<string, string> = {
   platin: "Platin-Liga",
 };
 
+const EMPTY_FRIEND_DATA: FriendData = { accepted: [], incoming: [], outgoing: [] };
+
 export default function Friends() {
   const { profile } = useAuth();
   const [tab, setTab] = useState<"league" | "friends">("league");
   const [league, setLeague] = useState<LeagueInfo | null>(null);
-  const [friends, setFriends] = useState<FriendItem[]>([]);
+  const [friendData, setFriendData] = useState<FriendData>(EMPTY_FRIEND_DATA);
   const [inviting, setInviting] = useState(false);
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const reload = async () => {
+    if (!profile) return;
+    setFriendData(await listFriendData(profile.id));
+  };
+
   useEffect(() => {
     if (!profile) return;
     setLoading(true);
-    Promise.all([getMyLeague(profile.id), listFriends(profile.id)])
+    Promise.all([getMyLeague(profile.id), listFriendData(profile.id)])
       .then(([l, f]) => {
         setLeague(l);
-        setFriends(f.sort((a, b) => b.xp - a.xp));
+        setFriendData({ ...f, accepted: f.accepted.sort((a, b) => b.xp - a.xp) });
       })
       .finally(() => setLoading(false));
   }, [profile]);
@@ -38,9 +45,18 @@ export default function Friends() {
       const res = await redeemInvite(code);
       setMsg(`${res.friend_name} ist jetzt dein Freund.`);
       setCode("");
-      if (profile) setFriends(await listFriends(profile.id));
+      await reload();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Code ungültig.");
+    }
+  };
+
+  const respond = async (targetId: string, accept: boolean) => {
+    try {
+      await respondFriendRequest(targetId, accept);
+      await reload();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Das hat nicht geklappt.");
     }
   };
 
@@ -60,9 +76,12 @@ export default function Friends() {
         </div>
         <div
           onClick={() => setTab("friends")}
-          style={{ flex: 1, textAlign: "center", padding: 11, borderRadius: 11, background: tab === "friends" ? "rgba(240,180,41,.18)" : "rgba(243,234,218,.06)", font: "700 12.5px/1 Archivo", cursor: "pointer" }}
+          style={{ flex: 1, textAlign: "center", padding: 11, borderRadius: 11, background: tab === "friends" ? "rgba(240,180,41,.18)" : "rgba(243,234,218,.06)", font: "700 12.5px/1 Archivo", cursor: "pointer", position: "relative" }}
         >
           Freunde
+          {friendData.incoming.length > 0 && (
+            <div style={{ position: "absolute", top: 4, right: 10, width: 8, height: 8, borderRadius: "50%", background: "#F0B429" }} />
+          )}
         </div>
       </div>
 
@@ -109,12 +128,33 @@ export default function Friends() {
 
       {tab === "friends" && (
         <>
-          {friends.length === 0 && (
-            <div style={{ font: "400 13px/1.6 Archivo", color: "rgba(243,234,218,.5)", marginBottom: 10 }}>
-              Noch keine Freunde — lade jemanden mit deinem Code ein.
+          {friendData.incoming.length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ font: "700 11px/1 'DM Mono',monospace", letterSpacing: ".08em", textTransform: "uppercase", color: "#F0B429", marginBottom: 8 }}>
+                Anfragen
+              </div>
+              {friendData.incoming.map((r) => (
+                <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 13, background: "rgba(240,180,41,.1)", marginBottom: 7 }}>
+                  <Avatar initials={initialsOf(r.name)} size={34} />
+                  <div style={{ flex: 1, font: "700 13px/1 Archivo" }}>{r.name}</div>
+                  <div onClick={() => respond(r.id, true)} style={{ background: "#F0B429", color: "#0D2B2F", borderRadius: 9, padding: "7px 12px", font: "800 11.5px/1 Archivo", cursor: "pointer" }}>
+                    Annehmen
+                  </div>
+                  <div onClick={() => respond(r.id, false)} style={{ color: "rgba(243,234,218,.5)", padding: "7px 8px", font: "700 11.5px/1 Archivo", cursor: "pointer" }}>
+                    Ablehnen
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-          {friends.map((f) => (
+
+          {friendData.accepted.length === 0 && friendData.outgoing.length === 0 && friendData.incoming.length === 0 && (
+            <div style={{ font: "400 13px/1.6 Archivo", color: "rgba(243,234,218,.5)", marginBottom: 10 }}>
+              Noch keine Freunde — lade jemanden mit deinem Code ein, oder füg jemanden nach einem Zufalls-Duell
+              hinzu.
+            </div>
+          )}
+          {friendData.accepted.map((f) => (
             <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 13, background: "rgba(243,234,218,.05)", marginBottom: 7 }}>
               <Avatar initials={initialsOf(f.name)} size={34} />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -122,6 +162,13 @@ export default function Friends() {
                 <div style={{ font: "400 10px/1.3 'DM Mono',monospace", color: "rgba(243,234,218,.45)", marginTop: 4 }}>{f.streak} Wochen Serie</div>
               </div>
               <div style={{ font: "900 16px/1 'Archivo Black',Archivo" }}>{f.xp} XP</div>
+            </div>
+          ))}
+          {friendData.outgoing.map((r) => (
+            <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 13, background: "rgba(243,234,218,.03)", marginBottom: 7, opacity: 0.6 }}>
+              <Avatar initials={initialsOf(r.name)} size={34} />
+              <div style={{ flex: 1, font: "700 13px/1 Archivo" }}>{r.name}</div>
+              <div style={{ font: "600 10.5px/1 'DM Mono',monospace", color: "rgba(243,234,218,.5)", textTransform: "uppercase" }}>Angefragt</div>
             </div>
           ))}
         </>

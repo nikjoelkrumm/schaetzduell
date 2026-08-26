@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../state/AuthContext";
-import { listDuels, listFriends, createDuel, type DuelListItem, type FriendItem } from "../lib/db";
+import { listDuels, listFriendData, createDuel, findOrCreateMatch, cancelMatchmaking, type DuelListItem, type FriendItem } from "../lib/db";
 import { Avatar, initialsOf } from "../components/ui";
 
 export default function Duels() {
@@ -10,9 +10,11 @@ export default function Duels() {
   const [duels, setDuels] = useState<DuelListItem[]>([]);
   const [friends, setFriends] = useState<FriendItem[]>([]);
   const [picking, setPicking] = useState(false);
+  const [matchmaking, setMatchmaking] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!profile) return;
@@ -23,12 +25,16 @@ export default function Duels() {
       .finally(() => setLoading(false));
   }, [profile]);
 
+  useEffect(() => () => {
+    if (pollRef.current) window.clearInterval(pollRef.current);
+  }, []);
+
   const startPicking = async () => {
     if (!profile) return;
     setPicking(true);
     setError(null);
     try {
-      setFriends(await listFriends(profile.id));
+      setFriends((await listFriendData(profile.id)).accepted);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Konnte Freunde nicht laden.");
     }
@@ -47,6 +53,70 @@ export default function Duels() {
     }
   };
 
+  const startMatchmaking = async () => {
+    setError(null);
+    setMatchmaking(true);
+    try {
+      const id = await findOrCreateMatch(6);
+      if (id) {
+        setMatchmaking(false);
+        navigate(`/duelle/${id}`);
+        return;
+      }
+      pollRef.current = window.setInterval(async () => {
+        try {
+          const found = await findOrCreateMatch(6);
+          if (found) {
+            if (pollRef.current) window.clearInterval(pollRef.current);
+            setMatchmaking(false);
+            navigate(`/duelle/${found}`);
+          }
+        } catch {
+          // transient error while polling — try again on the next tick
+        }
+      }, 2500);
+    } catch (e) {
+      setMatchmaking(false);
+      setError(e instanceof Error ? e.message : "Matchmaking fehlgeschlagen.");
+    }
+  };
+
+  const stopMatchmaking = async () => {
+    if (pollRef.current) window.clearInterval(pollRef.current);
+    setMatchmaking(false);
+    try {
+      await cancelMatchmaking();
+    } catch {
+      // best effort — the server-side row will just sit unmatched until reused
+    }
+  };
+
+  if (matchmaking) {
+    return (
+      <div className="screen-in" style={{ minHeight: "100%", display: "flex", flexDirection: "column", padding: "8px 20px 18px" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", gap: 18 }}>
+          <div
+            style={{
+              width: 64, height: 64, borderRadius: "50%",
+              border: "3px solid rgba(240,180,41,.25)", borderTopColor: "#F0B429",
+              animation: "sd-pulse 1s linear infinite",
+            }}
+          />
+          <div style={{ font: "900 20px/1.3 'Archivo Black',Archivo" }}>Suche Gegner…</div>
+          <div style={{ font: "400 13px/1.5 Archivo", color: "rgba(243,234,218,.55)", maxWidth: 260 }}>
+            Du wirst automatisch weitergeleitet, sobald jemand gefunden wurde.
+          </div>
+        </div>
+        <div
+          onClick={stopMatchmaking}
+          style={{ border: "1px solid rgba(243,234,218,.25)", borderRadius: 14, height: 52, display: "flex", alignItems: "center", justifyContent: "center", font: "700 14px/1 Archivo", color: "#F3EADA", cursor: "pointer" }}
+        >
+          Abbrechen
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="screen-in" style={{ padding: "8px 20px 20px" }}>
       <div style={{ font: "900 27px/1 'Archivo Black',Archivo", letterSpacing: "-.025em", margin: "6px 0 6px" }}>Duelle</div>
@@ -54,18 +124,27 @@ export default function Duels() {
         {duels.length} {duels.length === 1 ? "Duell" : "Duelle"}
       </div>
 
-      <div
-        onClick={startPicking}
-        style={{ background: "#F0B429", color: "#0D2B2F", borderRadius: 14, height: 52, display: "flex", alignItems: "center", justifyContent: "center", font: "800 15px/1 Archivo", cursor: "pointer", marginBottom: picking ? 12 : 20 }}
-      >
-        Neues Duell starten
+      <div style={{ display: "flex", gap: 10, marginBottom: picking ? 12 : 20 }}>
+        <div
+          onClick={startMatchmaking}
+          style={{ flex: 1, background: "#F0B429", color: "#0D2B2F", borderRadius: 14, height: 52, display: "flex", alignItems: "center", justifyContent: "center", font: "800 14px/1 Archivo", cursor: "pointer" }}
+        >
+          Zufallsgegner
+        </div>
+        <div
+          onClick={startPicking}
+          style={{ flex: 1, border: "1px solid rgba(243,234,218,.25)", color: "#F3EADA", borderRadius: 14, height: 52, display: "flex", alignItems: "center", justifyContent: "center", font: "800 14px/1 Archivo", cursor: "pointer" }}
+        >
+          Freund fordern
+        </div>
       </div>
 
       {picking && (
         <div style={{ marginBottom: 20 }}>
           {friends.length === 0 && (
             <div style={{ font: "400 12px/1.5 Archivo", color: "rgba(243,234,218,.5)" }}>
-              Noch keine Freunde — lade zuerst jemanden auf der Freunde-Seite ein.
+              Noch keine Freunde — lade zuerst jemanden auf der Freunde-Seite ein, oder spiel erst gegen einen
+              Zufallsgegner.
             </div>
           )}
           {friends.map((f) => (

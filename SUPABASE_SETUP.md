@@ -16,7 +16,7 @@ walks through creating one and wiring it to `app/`.
 ## 2. Run the migrations
 
 In the SQL Editor, run every file in `supabase/migrations/` **in filename
-order** (`0001_…` through `0007_…`), each as its own query. They're plain SQL,
+order** (`0001_…` through `0009_…`), each as its own query. They're plain SQL,
 no CLI required — though if you have the
 [Supabase CLI](https://supabase.com/docs/guides/local-development) set up
 against this project, `supabase db push` works too.
@@ -30,7 +30,15 @@ cron tick to see something in the app.
 
 If anything errors partway through, migrations and seeds are safe to re-run
 from the top — `create table if not exists`, `create or replace function`,
-and `on conflict do nothing` make the whole set idempotent.
+`drop policy if exists`, and `on conflict do nothing` make the whole set
+idempotent.
+
+**Already ran an earlier version of this?** `supabase/combined_setup.sql`
+always has every migration + seed up to date, so re-running it in full is
+safe and picks up anything new. If you'd rather not re-run the whole thing,
+`supabase/update_002_matchmaking.sql` is just the two migrations that added
+friend requests and random-opponent matchmaking (`0008`, `0009`) — paste and
+run that one file instead.
 
 ## 3. Turn on Realtime for three tables
 

@@ -78,6 +78,33 @@ export async function redeemInvite(code: string): Promise<{ friend_id: string; f
   return data as { friend_id: string; friend_name: string };
 }
 
+export async function sendFriendRequest(targetId: string): Promise<{ target_name: string }> {
+  const { data, error } = await requireSupabase().rpc("send_friend_request", { p_target_id: targetId });
+  if (error) throw error;
+  return data as { target_name: string };
+}
+
+export async function respondFriendRequest(targetId: string, accept: boolean): Promise<void> {
+  const { error } = await requireSupabase().rpc("respond_friend_request", {
+    p_target_id: targetId,
+    p_accept: accept,
+  });
+  if (error) throw error;
+}
+
+// Returns a duel id once matched, or null if still waiting in the queue —
+// the caller polls this every couple of seconds until it's non-null.
+export async function findOrCreateMatch(rounds = 6): Promise<string | null> {
+  const { data, error } = await requireSupabase().rpc("find_or_create_match", { p_rounds: rounds });
+  if (error) throw error;
+  return data as string | null;
+}
+
+export async function cancelMatchmaking(): Promise<void> {
+  const { error } = await requireSupabase().rpc("cancel_matchmaking");
+  if (error) throw error;
+}
+
 export async function reportQuestion(questionId: number, reason: string): Promise<void> {
   const { error } = await requireSupabase().rpc("report_question", {
     p_question_id: questionId,
@@ -151,17 +178,45 @@ export interface FriendItem {
   streak: number;
 }
 
-export async function listFriends(myId: string): Promise<FriendItem[]> {
+export interface FriendRequestItem {
+  id: string;
+  name: string;
+}
+
+export interface FriendData {
+  accepted: FriendItem[];
+  incoming: FriendRequestItem[]; // requests sent TO me — I can accept/decline
+  outgoing: FriendRequestItem[]; // requests I sent — waiting on them
+}
+
+export async function listFriendData(myId: string): Promise<FriendData> {
   const sb = requireSupabase();
-  const { data: friendships, error } = await sb
+  const { data: rows, error } = await sb
     .from("friendships")
-    .select("a_id, b_id")
+    .select("a_id, b_id, status, requested_by")
     .or(`a_id.eq.${myId},b_id.eq.${myId}`);
   if (error) throw error;
-  const ids = (friendships ?? []).map((f) => (f.a_id === myId ? f.b_id : f.a_id));
-  if (ids.length === 0) return [];
-  const { data: friends } = await sb.from("profile_public").select("id, name, xp, streak").in("id", ids);
-  return (friends ?? []) as FriendItem[];
+
+  const otherIds = (rows ?? []).map((r) => (r.a_id === myId ? r.b_id : r.a_id));
+  const { data: people } = otherIds.length
+    ? await sb.from("profile_public").select("id, name, xp, streak").in("id", otherIds)
+    : { data: [] as { id: string; name: string; xp: number; streak: number }[] };
+  const byId = new Map((people ?? []).map((p) => [p.id, p]));
+
+  const result: FriendData = { accepted: [], incoming: [], outgoing: [] };
+  for (const r of rows ?? []) {
+    const otherId = r.a_id === myId ? r.b_id : r.a_id;
+    const person = byId.get(otherId);
+    if (!person) continue;
+    if (r.status === "accepted") {
+      result.accepted.push(person);
+    } else if (r.requested_by === myId) {
+      result.outgoing.push({ id: person.id, name: person.name });
+    } else {
+      result.incoming.push({ id: person.id, name: person.name });
+    }
+  }
+  return result;
 }
 
 export interface StandingRow {
@@ -226,6 +281,18 @@ export async function getMyLeague(myId: string): Promise<LeagueInfo | null> {
     myRank: standings.findIndex((s) => s.profile_id === myId) + 1,
     groupSize: standings.length,
   };
+}
+
+export type FriendshipStatus = "none" | "accepted" | "outgoing" | "incoming";
+
+export async function getFriendshipStatus(myId: string, otherId: string): Promise<FriendshipStatus> {
+  const sb = requireSupabase();
+  const a = myId < otherId ? myId : otherId;
+  const b = myId < otherId ? otherId : myId;
+  const { data } = await sb.from("friendships").select("status, requested_by").eq("a_id", a).eq("b_id", b).maybeSingle();
+  if (!data) return "none";
+  if (data.status === "accepted") return "accepted";
+  return data.requested_by === myId ? "outgoing" : "incoming";
 }
 
 export async function getProfileBadges(myId: string): Promise<string[]> {

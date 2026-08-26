@@ -113,6 +113,37 @@ an actual Postgres materialized view, since a real matview would need its
 own manual `REFRESH` scheduling anyway and this is simpler for the same
 result at this scale.
 
+## Random-opponent matchmaking and friend requests
+
+Added after the initial build, at the user's request — the design's Duelle
+screen only ever showed challenging an existing friend. Two additions on top
+of that, in `0008_friend_requests.sql` and `0009_matchmaking.sql`:
+
+- **Friend requests**: `friendships.status` already had a `pending` value in
+  its enum from the start, unused until now. `send_friend_request()` /
+  `respond_friend_request()` give it real request/accept semantics
+  (`requested_by` records who asked whom), alongside the original
+  code-based `redeem_invite()` flow which still goes straight to `accepted`
+  since sharing a code already implies mutual consent.
+- **Matchmaking**: `matchmaking_queue` is a one-row-per-waiting-player table
+  with no client-facing RLS policies at all (same treatment as
+  `question_reports` — everything through the RPC). `find_or_create_match()`
+  either pairs you with whoever's already waiting (`for update skip locked`
+  so two concurrent callers can't both grab the same opponent) or puts you in
+  the queue and returns null; the client polls it every ~2.5s until it gets a
+  duel id back. This deliberately avoids needing Realtime for the "you've
+  been matched" signal — one more moving part than necessary for what's
+  fundamentally a short poll.
+- `create_duel_rows()` is the row-creation logic (fresh questions, insert
+  duel + rounds, push) pulled out of the original `create_duel()` so both the
+  friend-challenge path and the matchmaking path share one implementation.
+  `create_duel()` itself still requires an accepted friendship, with one
+  exception: a rematch (`p_rematch_of` pointing at a duel the same two people
+  already played) is allowed even as strangers, so "Revanche" works right
+  after a matchmaking duel without a friend request first.
+- After a matchmaking duel, the result screen offers "add as friend" if
+  you're not already — wired to `send_friend_request()`.
+
 ## Local-save migration — changed from the original sketch
 
 The design's rpc list includes `import_local_save(json)` for carrying a

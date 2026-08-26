@@ -1,25 +1,30 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getDuel, createDuel } from "../lib/db";
+import { getDuel, createDuel, getFriendshipStatus, sendFriendRequest, type FriendshipStatus } from "../lib/db";
 import type { DuelDetail as DuelDetailT } from "../lib/types";
 import { nf } from "../lib/scoring";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../state/AuthContext";
 
 export default function DuelDetail() {
   const { duelId } = useParams<{ duelId: string }>();
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [duel, setDuel] = useState<DuelDetailT | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [friendship, setFriendship] = useState<FriendshipStatus>("none");
 
   const load = useCallback(async () => {
     if (!duelId) return;
     try {
-      setDuel(await getDuel(duelId));
+      const d = await getDuel(duelId);
+      setDuel(d);
+      if (profile) setFriendship(await getFriendshipStatus(profile.id, d.opponent));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Duell nicht gefunden.");
     }
-  }, [duelId]);
+  }, [duelId, profile]);
 
   useEffect(() => {
     void load();
@@ -71,6 +76,16 @@ export default function DuelDetail() {
     }
   };
 
+  const addFriend = async () => {
+    setError(null);
+    try {
+      await sendFriendRequest(duel.opponent);
+      setFriendship("outgoing");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Anfrage konnte nicht gesendet werden.");
+    }
+  };
+
   return (
     <div className="screen-in" style={{ minHeight: "100%", display: "flex", flexDirection: "column", padding: "8px 20px 18px" }}>
       <div onClick={() => navigate("/duelle")} style={{ font: "600 13px/1 Archivo", color: "rgba(243,234,218,.55)", padding: "8px 0", cursor: "pointer" }}>
@@ -90,6 +105,20 @@ export default function DuelDetail() {
           <div style={{ font: "900 46px/1 'Archivo Black',Archivo", marginTop: 6 }}>{oppTotal}</div>
         </div>
       </div>
+
+      {friendship === "none" && (
+        <div
+          onClick={addFriend}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, border: "1px dashed rgba(240,180,41,.4)", borderRadius: 12, padding: "10px 14px", marginBottom: 20, cursor: "pointer" }}
+        >
+          <span style={{ font: "700 12.5px/1 Archivo", color: "#F0B429" }}>+ {duel.opponent_name} als Freund hinzufügen</span>
+        </div>
+      )}
+      {friendship === "outgoing" && (
+        <div style={{ textAlign: "center", font: "600 11.5px/1 Archivo", color: "rgba(243,234,218,.45)", marginBottom: 20 }}>
+          Freundschaftsanfrage gesendet
+        </div>
+      )}
 
       {duel.round_list.map((r) => (
         <div
