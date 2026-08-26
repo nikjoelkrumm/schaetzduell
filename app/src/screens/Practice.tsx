@@ -26,8 +26,8 @@ export default function Practice() {
             key={c.id}
             onClick={() => toggle(c.id)}
             style={{
-              background: on ? "rgba(240,180,41,.1)" : "#12393E",
-              border: `1px solid ${on ? "rgba(240,180,41,.45)" : "rgba(243,234,218,.12)"}`,
+              background: on ? `${c.color}1a` : "#12393E",
+              border: `1px solid ${on ? `${c.color}73` : "rgba(243,234,218,.12)"}`,
               borderRadius: 16,
               padding: 16,
               marginBottom: 10,
@@ -37,14 +37,14 @@ export default function Practice() {
               cursor: "pointer",
             }}
           >
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: on ? "#F0B429" : "rgba(243,234,218,.25)", flex: "none" }} />
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: on ? c.color : "rgba(243,234,218,.25)", flex: "none" }} />
             <div style={{ flex: 1 }}>
               <div style={{ font: "800 14px/1 Archivo" }}>{c.name}</div>
               <div style={{ font: "400 10.5px/1.4 'DM Mono',monospace", color: "rgba(243,234,218,.5)", marginTop: 6 }}>
                 {c.description}
               </div>
             </div>
-            <div style={{ font: "500 12px/1 'DM Mono',monospace", color: "rgba(243,234,218,.45)" }}>{c.count} Fragen</div>
+            <div style={{ font: "500 12px/1 'DM Mono',monospace", color: on ? c.color : "rgba(243,234,218,.45)" }}>{c.count} Fragen</div>
           </div>
         );
       })}

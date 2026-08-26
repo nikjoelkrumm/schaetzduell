@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../state/AuthContext";
 import { listDuels, listFriendData, createDuel, findOrCreateMatch, cancelMatchmaking, type DuelListItem, type FriendItem } from "../lib/db";
-import { Avatar, initialsOf } from "../components/ui";
+import { initialsOf } from "../components/ui";
+import { AvatarView } from "../components/AvatarView";
 
 export default function Duels() {
   const navigate = useNavigate();
@@ -153,7 +154,7 @@ export default function Duels() {
               onClick={() => !busy && challenge(f.id)}
               style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 12, background: "rgba(243,234,218,.06)", marginBottom: 6, cursor: busy ? "default" : "pointer" }}
             >
-              <Avatar initials={initialsOf(f.name)} size={32} />
+              <AvatarView config={f.avatar} initials={initialsOf(f.name)} size={32} />
               <div style={{ font: "700 13px/1 Archivo" }}>{f.name}</div>
             </div>
           ))}
@@ -173,7 +174,7 @@ export default function Duels() {
           style={{ background: "#12393E", border: "1px solid rgba(243,234,218,.12)", borderRadius: 16, padding: 15, marginBottom: 10, cursor: "pointer" }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Avatar initials={initialsOf(d.opponent_name)} size={42} />
+            <AvatarView config={d.opponent_avatar} initials={initialsOf(d.opponent_name)} size={42} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ font: "700 14px/1.2 Archivo" }}>{d.opponent_name}</div>
               <div style={{ font: "400 10.5px/1.4 'DM Mono',monospace", color: "rgba(243,234,218,.5)", marginTop: 4 }}>

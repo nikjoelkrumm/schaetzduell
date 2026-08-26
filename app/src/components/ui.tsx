@@ -104,27 +104,6 @@ export function StatTile({ value, label }: { value: ReactNode; label: string }) 
   );
 }
 
-export function Avatar({ initials, size = 38 }: { initials: string; size?: number }) {
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size > 50 ? 18 : 11,
-        background: "#1B4C52",
-        border: "1px solid rgba(243,234,218,.18)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        font: `900 ${Math.round(size * 0.37)}px/1 'Archivo Black',Archivo`,
-        flex: "none",
-      }}
-    >
-      {initials}
-    </div>
-  );
-}
-
 export function ProgressDots({ total, filled }: { total: number; filled: number }) {
   return (
     <div style={{ display: "flex", gap: 8, margin: "18px 0 20px" }}>

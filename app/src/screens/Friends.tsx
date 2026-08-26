@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../state/AuthContext";
 import { getMyLeague, listFriendData, redeemInvite, respondFriendRequest, type LeagueInfo, type FriendData } from "../lib/db";
-import { Avatar, initialsOf } from "../components/ui";
+import { initialsOf } from "../components/ui";
+import { AvatarView } from "../components/AvatarView";
+import { WhatsAppIcon } from "../components/icons";
 
 const TIER_LABEL: Record<string, string> = {
   bronze: "Bronze-Liga",
@@ -113,7 +115,7 @@ export default function Friends() {
               style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 13, background: s.profile_id === profile.id ? "rgba(240,180,41,.12)" : "rgba(243,234,218,.05)", marginBottom: 7 }}
             >
               <div style={{ font: "500 12px/1 'DM Mono',monospace", color: "rgba(243,234,218,.5)", width: 20 }}>{i + 1}</div>
-              <Avatar initials={initialsOf(s.name)} size={34} />
+              <AvatarView config={s.avatar} initials={initialsOf(s.name)} size={34} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ font: "700 13px/1.2 Archivo" }}>{s.profile_id === profile.id ? `${s.name} — du` : s.name}</div>
                 <div style={{ font: "400 10px/1.3 'DM Mono',monospace", color: "rgba(243,234,218,.45)", marginTop: 4 }}>
@@ -135,7 +137,7 @@ export default function Friends() {
               </div>
               {friendData.incoming.map((r) => (
                 <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 13, background: "rgba(240,180,41,.1)", marginBottom: 7 }}>
-                  <Avatar initials={initialsOf(r.name)} size={34} />
+                  <AvatarView config={r.avatar} initials={initialsOf(r.name)} size={34} />
                   <div style={{ flex: 1, font: "700 13px/1 Archivo" }}>{r.name}</div>
                   <div onClick={() => respond(r.id, true)} style={{ background: "#F0B429", color: "#0D2B2F", borderRadius: 9, padding: "7px 12px", font: "800 11.5px/1 Archivo", cursor: "pointer" }}>
                     Annehmen
@@ -156,7 +158,7 @@ export default function Friends() {
           )}
           {friendData.accepted.map((f) => (
             <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 13, background: "rgba(243,234,218,.05)", marginBottom: 7 }}>
-              <Avatar initials={initialsOf(f.name)} size={34} />
+              <AvatarView config={f.avatar} initials={initialsOf(f.name)} size={34} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ font: "700 13px/1.2 Archivo" }}>{f.name}</div>
                 <div style={{ font: "400 10px/1.3 'DM Mono',monospace", color: "rgba(243,234,218,.45)", marginTop: 4 }}>{f.streak} Wochen Serie</div>
@@ -166,7 +168,7 @@ export default function Friends() {
           ))}
           {friendData.outgoing.map((r) => (
             <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 13, background: "rgba(243,234,218,.03)", marginBottom: 7, opacity: 0.6 }}>
-              <Avatar initials={initialsOf(r.name)} size={34} />
+              <AvatarView config={r.avatar} initials={initialsOf(r.name)} size={34} />
               <div style={{ flex: 1, font: "700 13px/1 Archivo" }}>{r.name}</div>
               <div style={{ font: "600 10.5px/1 'DM Mono',monospace", color: "rgba(243,234,218,.5)", textTransform: "uppercase" }}>Angefragt</div>
             </div>
@@ -186,6 +188,21 @@ export default function Friends() {
         </div>
         <div style={{ font: "600 15px/1 Archivo", color: "#F0B429" }}>↗</div>
       </div>
+
+      <a
+        href={`https://wa.me/?text=${encodeURIComponent(
+          `Spiel Schätzduell mit mir! Mein Code: SD-${profile.invite_code} — ${window.location.origin}`,
+        )}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          marginTop: 10, background: "#25D366", borderRadius: 14, padding: 15, display: "flex",
+          alignItems: "center", justifyContent: "center", gap: 9, textDecoration: "none", cursor: "pointer",
+        }}
+      >
+        <WhatsAppIcon color="#0D2B2F" size={19} />
+        <span style={{ font: "800 13.5px/1 Archivo", color: "#0D2B2F" }}>Per WhatsApp einladen</span>
+      </a>
 
       {inviting && (
         <div style={{ marginTop: 12, display: "flex", gap: 8 }}>

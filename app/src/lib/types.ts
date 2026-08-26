@@ -1,3 +1,5 @@
+import type { AvatarConfig } from "./avatar";
+
 export interface Profile {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export interface Profile {
   imported_local_save: boolean;
   last_completed_week: string | null;
   created_at: string;
+  avatar: AvatarConfig;
 }
 
 export interface WeekQuestion {
@@ -59,6 +62,7 @@ export interface DuelDetail {
   me: string;
   opponent: string;
   opponent_name: string;
+  opponent_avatar: AvatarConfig;
   round_list: DuelRound[];
 }
 

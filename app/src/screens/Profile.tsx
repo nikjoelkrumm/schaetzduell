@@ -2,17 +2,19 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../state/AuthContext";
 import { getProfileBadges, exportMyData, deleteMyAccount } from "../lib/db";
-import { Avatar, initialsOf } from "../components/ui";
+import { initialsOf } from "../components/ui";
+import { AvatarView } from "../components/AvatarView";
+import { FlameIcon, CrownIcon, TargetIcon, MedalIcon, DuelIcon, MoonIcon, DiamondIcon, CompassIcon } from "../components/icons";
 
-const BADGE_DEFS: { key: string; title: string; shape: string }[] = [
-  { key: "serie7", title: "Serie 7", shape: "50%" },
-  { key: "volltreffer", title: "Volltreffer", shape: "3px" },
-  { key: "gold", title: "Gold", shape: "50%" },
-  { key: "duellsieg", title: "Duellsieg", shape: "3px" },
-  { key: "nachteule", title: "Nachteule", shape: "50%" },
-  { key: "serie20", title: "Serie 20", shape: "50%" },
-  { key: "diamant", title: "Diamant", shape: "3px" },
-  { key: "alle_kat", title: "Alle Kat.", shape: "50%" },
+const BADGE_DEFS = [
+  { key: "serie7", title: "Serie 7", Icon: FlameIcon, tint: "#F0B429" },
+  { key: "volltreffer", title: "Volltreffer", Icon: TargetIcon, tint: "#5FBF8B" },
+  { key: "gold", title: "Gold", Icon: MedalIcon, tint: "#F0B429" },
+  { key: "duellsieg", title: "Duellsieg", Icon: DuelIcon, tint: "#E2553C" },
+  { key: "nachteule", title: "Nachteule", Icon: MoonIcon, tint: "#4EA8DE" },
+  { key: "serie20", title: "Serie 20", Icon: CrownIcon, tint: "#F0B429" },
+  { key: "diamant", title: "Diamant", Icon: DiamondIcon, tint: "#C77DFF" },
+  { key: "alle_kat", title: "Alle Kat.", Icon: CompassIcon, tint: "#F27B9D" },
 ];
 
 export default function Profile() {
@@ -68,7 +70,19 @@ export default function Profile() {
   return (
     <div className="screen-in" style={{ padding: "8px 20px 20px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "10px 0 24px" }}>
-        <Avatar initials={initialsOf(profile.name)} size={64} />
+        <div onClick={() => navigate("/profil/avatar")} style={{ position: "relative", cursor: "pointer" }}>
+          <AvatarView config={profile.avatar} initials={initialsOf(profile.name)} size={64} />
+          <div
+            style={{
+              position: "absolute", bottom: -2, right: -2, width: 22, height: 22, borderRadius: "50%",
+              background: "#F0B429", border: "2px solid #0D2B2F", display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+              <path d="M4 20h4L18.5 9.5a2 2 0 0 0 0-2.8L17.3 5.5a2 2 0 0 0-2.8 0L4 16v4Z" stroke="#0D2B2F" strokeWidth={2.2} strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
         <div>
           <div style={{ font: "900 22px/1 'Archivo Black',Archivo", letterSpacing: "-.02em" }}>{profile.name}</div>
           <div style={{ font: "400 11px/1.4 'DM Mono',monospace", color: "rgba(243,234,218,.5)", marginTop: 7 }}>
@@ -100,18 +114,20 @@ export default function Profile() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 22 }}>
         {BADGE_DEFS.map((b) => {
           const on = earned.has(b.key);
+          const { Icon } = b;
           return (
             <div
               key={b.key}
               style={{
                 aspectRatio: "1", borderRadius: 14,
-                background: on ? "rgba(240,180,41,.12)" : "rgba(243,234,218,.04)",
-                border: `1px solid ${on ? "rgba(240,180,41,.4)" : "rgba(243,234,218,.1)"}`,
+                background: on ? `radial-gradient(circle at 30% 25%, ${b.tint}33, ${b.tint}0d 70%)` : "rgba(243,234,218,.04)",
+                border: `1px solid ${on ? `${b.tint}66` : "rgba(243,234,218,.1)"}`,
+                boxShadow: on ? `0 4px 14px ${b.tint}26` : "none",
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, padding: 6,
               }}
             >
-              <div style={{ width: 16, height: 16, background: on ? "#F0B429" : "rgba(243,234,218,.3)", borderRadius: b.shape }} />
-              <div style={{ font: "600 8.5px/1.2 Archivo", color: on ? "#F0B429" : "rgba(243,234,218,.3)", textAlign: "center" }}>{b.title}</div>
+              <Icon color={on ? b.tint : "rgba(243,234,218,.25)"} size={22} />
+              <div style={{ font: "600 8.5px/1.2 Archivo", color: on ? b.tint : "rgba(243,234,218,.3)", textAlign: "center" }}>{b.title}</div>
             </div>
           );
         })}

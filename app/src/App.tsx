@@ -13,6 +13,7 @@ import Duels from "./screens/Duels";
 import DuelDetail from "./screens/DuelDetail";
 import Friends from "./screens/Friends";
 import Profile from "./screens/Profile";
+import AvatarEditor from "./screens/AvatarEditor";
 import Share from "./screens/Share";
 import Paywall from "./screens/Paywall";
 
@@ -64,6 +65,7 @@ function Shell() {
           />
           <Route path="/freunde" element={<RequireAuth><Friends /></RequireAuth>} />
           <Route path="/profil" element={<RequireAuth><Profile /></RequireAuth>} />
+          <Route path="/profil/avatar" element={<RequireAuth><AvatarEditor /></RequireAuth>} />
           <Route path="/teilen" element={<RequireAuth><Share /></RequireAuth>} />
           <Route path="/plus" element={<RequireAuth><Paywall /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />

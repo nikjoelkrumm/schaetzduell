@@ -4,7 +4,8 @@ import { useAuth } from "../state/AuthContext";
 import { getWeek, listDuels, getMyLeague, type DuelListItem, type LeagueInfo } from "../lib/db";
 import type { WeekPayload } from "../lib/types";
 import { formatCountdown } from "../lib/format";
-import { Avatar, Card, StatTile, ProgressDots, initialsOf } from "../components/ui";
+import { Card, StatTile, ProgressDots, initialsOf } from "../components/ui";
+import { AvatarView } from "../components/AvatarView";
 
 const TIER_LABEL: Record<string, string> = {
   bronze: "BRONZE",
@@ -87,7 +88,7 @@ export default function Home() {
               {league ? `${TIER_LABEL[league.tier]} · #${league.myRank}` : "—"}
             </div>
           </div>
-          <Avatar initials={initialsOf(profile.name)} />
+          <AvatarView config={profile.avatar} initials={initialsOf(profile.name)} />
         </div>
       </div>
 
@@ -156,7 +157,7 @@ export default function Home() {
           onClick={() => navigate(`/duelle/${d.id}`)}
           style={{ background: "#12393E", border: "1px solid rgba(243,234,218,.12)", borderRadius: 15, padding: 14, display: "flex", alignItems: "center", gap: 12, marginBottom: 9, cursor: "pointer" }}
         >
-          <Avatar initials={initialsOf(d.opponent_name)} size={40} />
+          <AvatarView config={d.opponent_avatar} initials={initialsOf(d.opponent_name)} size={40} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: "700 13.5px/1.2 Archivo" }}>{d.opponent_name}</div>
             <div style={{ font: "400 10.5px/1.4 'DM Mono',monospace", color: "rgba(243,234,218,.5)", marginTop: 4 }}>

@@ -6,6 +6,7 @@ import type { PracticeQuestion, WeekQuestion } from "../lib/types";
 import { parseGuess, nf, sliderToVal, valToSlider, scalePosPct, band } from "../lib/scoring";
 import { enqueue, makeIdemKey, readQueue, removeFromQueue } from "../lib/offlineQueue";
 import { supabase } from "../lib/supabase";
+import { categoryColorByName } from "../data/categories";
 
 type Mode = "week" | "practice" | "duel";
 
@@ -319,7 +320,7 @@ export default function GuessFlow({ mode }: { mode: Mode }) {
     return (
       <div className="screen-in" style={{ minHeight: "100%", display: "flex", flexDirection: "column", padding: "8px 20px 18px" }}>
         <div style={{ font: "400 11px/1 'DM Mono',monospace", color: "rgba(243,234,218,.5)", margin: "6px 0 20px" }}>
-          {question.progressLabel} · {question.catName}
+          {question.progressLabel} · <span style={{ color: categoryColorByName(question.catName) }}>{question.catName}</span>
         </div>
         <div style={{ font: "600 15px/1.35 Archivo", color: "rgba(243,234,218,.7)", marginBottom: 30 }}>{question.text}</div>
 
@@ -401,7 +402,7 @@ export default function GuessFlow({ mode }: { mode: Mode }) {
           ✕
         </div>
         <div style={{ font: "400 11px/1 'DM Mono',monospace", color: "rgba(243,234,218,.55)" }}>{question.progressLabel}</div>
-        <div style={{ font: "400 11px/1 'DM Mono',monospace", color: "#F0B429" }}>{question.catName}</div>
+        <div style={{ font: "400 11px/1 'DM Mono',monospace", color: categoryColorByName(question.catName) }}>{question.catName}</div>
       </div>
       <div style={{ font: "900 26px/1.18 'Archivo Black',Archivo", letterSpacing: "-.02em", marginBottom: 8 }}>{question.text}</div>
       <div style={{ font: "400 12px/1.4 'DM Mono',monospace", color: "rgba(243,234,218,.45)", marginBottom: 26 }}>
@@ -422,7 +423,7 @@ export default function GuessFlow({ mode }: { mode: Mode }) {
           max={1000}
           value={slider}
           onChange={(e) => onSlide(Number(e.target.value))}
-          style={{ width: "100%", accentColor: "#F0B429", height: 26 }}
+          style={{ width: "100%", accentColor: categoryColorByName(question.catName), height: 26 }}
         />
         <div style={{ display: "flex", justifyContent: "space-between", font: "400 10px/1 'DM Mono',monospace", color: "rgba(243,234,218,.35)", marginTop: 2 }}>
           <span>1</span>

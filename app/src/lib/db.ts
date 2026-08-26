@@ -7,6 +7,7 @@ import type {
   Profile,
   WeekPayload,
 } from "./types";
+import type { AvatarConfig } from "./avatar";
 
 // Thin typed wrappers around the RPCs in supabase/migrations/0005_functions.sql.
 // Every write in here is server-authoritative — none of these compute a score
@@ -130,6 +131,7 @@ export interface DuelListItem {
   rounds: number;
   created_at: string;
   opponent_name: string;
+  opponent_avatar: AvatarConfig;
   my_total: number;
   opp_total: number;
   my_turn: boolean;
@@ -163,6 +165,7 @@ export async function listDuels(myId: string): Promise<DuelListItem[]> {
       rounds: d.rounds,
       created_at: d.created_at,
       opponent_name: detail.opponent_name,
+      opponent_avatar: detail.opponent_avatar,
       my_total: myTotal,
       opp_total: oppTotal,
       my_turn: myTurn,
@@ -176,11 +179,13 @@ export interface FriendItem {
   name: string;
   xp: number;
   streak: number;
+  avatar: AvatarConfig;
 }
 
 export interface FriendRequestItem {
   id: string;
   name: string;
+  avatar: AvatarConfig;
 }
 
 export interface FriendData {
@@ -199,9 +204,9 @@ export async function listFriendData(myId: string): Promise<FriendData> {
 
   const otherIds = (rows ?? []).map((r) => (r.a_id === myId ? r.b_id : r.a_id));
   const { data: people } = otherIds.length
-    ? await sb.from("profile_public").select("id, name, xp, streak").in("id", otherIds)
-    : { data: [] as { id: string; name: string; xp: number; streak: number }[] };
-  const byId = new Map((people ?? []).map((p) => [p.id, p]));
+    ? await sb.from("profile_public").select("id, name, xp, streak, avatar").in("id", otherIds)
+    : { data: [] as FriendItem[] };
+  const byId = new Map((people ?? []).map((p) => [p.id, p as FriendItem]));
 
   const result: FriendData = { accepted: [], incoming: [], outgoing: [] };
   for (const r of rows ?? []) {
@@ -211,9 +216,9 @@ export async function listFriendData(myId: string): Promise<FriendData> {
     if (r.status === "accepted") {
       result.accepted.push(person);
     } else if (r.requested_by === myId) {
-      result.outgoing.push({ id: person.id, name: person.name });
+      result.outgoing.push({ id: person.id, name: person.name, avatar: person.avatar });
     } else {
-      result.incoming.push({ id: person.id, name: person.name });
+      result.incoming.push({ id: person.id, name: person.name, avatar: person.avatar });
     }
   }
   return result;
@@ -224,6 +229,7 @@ export interface StandingRow {
   name: string;
   points: number;
   streak: number;
+  avatar: AvatarConfig;
 }
 
 export interface LeagueInfo {
@@ -261,8 +267,8 @@ export async function getMyLeague(myId: string): Promise<LeagueInfo | null> {
 
   const ids = (rows ?? []).map((r) => r.profile_id);
   const { data: people } = ids.length
-    ? await sb.from("profile_public").select("id, name, streak").in("id", ids)
-    : { data: [] as { id: string; name: string; streak: number }[] };
+    ? await sb.from("profile_public").select("id, name, streak, avatar").in("id", ids)
+    : { data: [] as { id: string; name: string; streak: number; avatar: AvatarConfig }[] };
   const byId = new Map((people ?? []).map((p) => [p.id, p]));
 
   const standings: StandingRow[] = (rows ?? []).map((r) => ({
@@ -270,6 +276,7 @@ export async function getMyLeague(myId: string): Promise<LeagueInfo | null> {
     points: r.points,
     name: byId.get(r.profile_id)?.name ?? "Unbekannt",
     streak: byId.get(r.profile_id)?.streak ?? 0,
+    avatar: byId.get(r.profile_id)?.avatar ?? {},
   }));
 
   return {

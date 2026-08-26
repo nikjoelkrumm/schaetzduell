@@ -144,6 +144,22 @@ of that, in `0008_friend_requests.sql` and `0009_matchmaking.sql`:
 - After a matchmaking duel, the result screen offers "add as friend" if
   you're not already — wired to `send_friend_request()`.
 
+## Avatars
+
+Added on request, after feedback that the app read as visually monotonous.
+`profiles.avatar` is a `jsonb` blob (`{bg, skin, hair, hairStyle}`) rather
+than separate columns — it's purely cosmetic and client-rendered (an inline
+SVG in `AvatarView.tsx`, not an uploaded image), so there's no validation or
+gameplay logic that needs to reach into its fields individually, and the
+shape can grow (more hairstyles, accessories) without another migration.
+It's also the one profile field granted a direct client `UPDATE` instead of
+going through an RPC — everything else on `profiles` either affects scoring
+(`xp`, `streak`, …) or identity (`invite_code`), which is why those stay
+RPC/trigger-only; a color swatch choice has no security surface to protect.
+`profile_public` (and `get_duel()`'s inlined opponent lookup) expose it
+alongside `name` so avatars show up for opponents and friends, not just on
+your own profile.
+
 ## Local-save migration — changed from the original sketch
 
 The design's rpc list includes `import_local_save(json)` for carrying a
