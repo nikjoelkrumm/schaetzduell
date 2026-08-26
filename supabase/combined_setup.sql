@@ -53,7 +53,16 @@ create table if not exists public.profiles (
 -- and can read the whole profiles table) so it can return other people's
 -- rows despite the base table's "own row only" RLS policy — but it only
 -- ever selects the safe column list below, so nothing private leaks.
-create or replace view public.profile_public as
+--
+-- Drop-and-recreate rather than `create or replace`: a later migration
+-- (0010_avatar.sql) appends a column to this view, and Postgres refuses
+-- `create or replace view` if it would ever *remove* a column — which is
+-- exactly what re-running the full migration set from the top would do on a
+-- database that already has 0010 applied. Drop+create has no such
+-- restriction, and any grants lost with the drop are re-issued right after
+-- in 0003_auth_trigger_and_privileges.sql regardless.
+drop view if exists public.profile_public;
+create view public.profile_public as
   select id, name, xp, level, streak, created_at
   from public.profiles;
 
