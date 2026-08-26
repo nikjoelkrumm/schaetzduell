@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D2B2F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Schätzduell</title>
+<style>
+  /* ============ Schriften: lokal gebündelt, offline-fest ============
+     Erwartet vier Dateien im Ordner ./fonts/ neben dieser Datei.
+     Fehlen sie, greift automatisch der Systemfont-Fallback. ============ */
+  @font-face{font-family:"Archivo";src:url("fonts/Archivo-Variable.woff2") format("woff2-variations"),
+    url("fonts/Archivo-Variable.woff2") format("woff2");
+    font-weight:100 900;font-style:normal;font-display:swap}
+  @font-face{font-family:"Archivo Black";src:url("fonts/ArchivoBlack-Regular.woff2") format("woff2");
+    font-weight:400 900;font-style:normal;font-display:swap}
+  @font-face{font-family:"DM Mono";src:url("fonts/DMMono-Regular.woff2") format("woff2");
+    font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:"DM Mono";src:url("fonts/DMMono-Medium.woff2") format("woff2");
+    font-weight:500;font-style:normal;font-display:swap}
+</style>
+<style>
+  :root{
+    --petrol:#0D2B2F; --petrol-2:#12393E; --petrol-3:#1B4C52;
+    --cream:#F3EADA; --amber:#F0B429; --dim:rgba(243,234,218,.55);
+    --line:rgba(243,234,218,.15);
+    --display:"Archivo Black","Archivo","Helvetica Neue",system-ui,sans-serif;
+    --body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"DM Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  /* Ohne geladene Fontdateien fällt der Display-Stack auf einen Systemfont
+     zurück – Gewicht 900 sorgt dafür, dass er trotzdem fett aussieht. */
+  .wm,h2,.chip,.stepper .cnt b,.seg button,.cat .t1,.question,.turn b,.truth .val,
+  .row .who,.row .pt,.champ .name,.score .big,.score .band,.statgrid .v{font-weight:900}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{background:var(--petrol);color:var(--cream);font-family:var(--body);font-size:16px;
+    line-height:1.45;display:flex;justify-content:center;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  #app{width:100%;max-width:540px;display:flex;flex-direction:column;min-height:100dvh;padding:16px 16px 22px}
+  .main{flex:1;display:flex;flex-direction:column}
+  .spacer{flex:1;min-height:16px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+
+  /* ================= Logo-Lockup ================= */
+  .lock{display:flex;flex-direction:column;align-items:center;text-align:center;margin:10px 0 26px;user-select:none}
+  .mark{width:74px;height:74px;border-radius:20px;overflow:hidden;
+        box-shadow:0 10px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(243,234,218,.08)}
+  .mark .truthbar{transform-origin:center;animation:grow .7s cubic-bezier(.2,1,.3,1) both}
+  .mark .cvA{animation:inA .9s cubic-bezier(.2,1,.3,1) .12s both}
+  .mark .cvB{animation:inB .9s cubic-bezier(.2,1,.3,1) .12s both}
+  @keyframes grow{from{opacity:0;transform:scaleY(.2)}to{opacity:1;transform:scaleY(1)}}
+  @keyframes inA{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+  @keyframes inB{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+
+  .wm{font-family:var(--display);font-size:clamp(38px,12.5vw,56px);line-height:.84;
+      letter-spacing:-.045em;text-transform:uppercase;margin-top:16px}
+  .wm .d{display:block;color:var(--amber)}
+  .rule{width:100%;max-width:280px;height:12px;margin-top:14px;opacity:.9}
+  .rule line{stroke:rgba(243,234,218,.26);stroke-width:1}
+  .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--dim);margin-top:11px}
+
+  /* kompakte Kopfzeile in Screen 2 */
+  .lock.sm{margin:2px 0 20px}
+  .lock.sm .mark{width:44px;height:44px;border-radius:12px}
+  .lock.sm .wm{font-size:26px;margin-top:10px}
+  .lock.sm .rule,.lock.sm .tag{display:none}
+
+  .steps{display:flex;gap:6px;margin-bottom:20px}
+  .step{flex:1;height:3px;background:rgba(243,234,218,.13);border-radius:2px}
+  .step.on{background:var(--amber)}
+
+  h2{font-family:var(--display);font-size:22px;line-height:1.1;text-transform:uppercase;
+     letter-spacing:-.015em;margin-bottom:4px}
+  .sub{color:var(--dim);font-size:13.5px;margin-bottom:18px}
+  .flabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dim);margin:0 0 8px}
+
+  /* Stepper + Segmented */
+  .stepper{display:flex;align-items:center;gap:14px;background:var(--petrol-2);
+    border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin-bottom:18px}
+  .stepper button{width:44px;height:44px;flex:none;border-radius:9px;font-size:23px;padding:0;line-height:1}
+  .stepper .cnt{flex:1;text-align:center}
+  .stepper .cnt b{font-family:var(--display);font-size:32px;display:block;line-height:1}
+  .stepper .cnt span{font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--dim)}
+  .seg{display:flex;gap:8px;margin-bottom:20px}
+  .seg button{background:var(--petrol-2);border:1px solid var(--line);color:var(--dim);
+    font-family:var(--display);font-size:15px;padding:15px 10px;letter-spacing:0}
+  .seg button small{display:block;font-family:var(--mono);font-size:9.5px;font-weight:400;
+    letter-spacing:.14em;margin-top:3px;opacity:.8;text-transform:uppercase}
+  .seg button[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#0D2B2F}
+
+  .names{display:flex;flex-direction:column;gap:8px}
+  .nrow{display:flex;align-items:center;gap:11px}
+  .chip{width:26px;height:26px;border-radius:8px;flex:none;font-family:var(--display);
+    font-size:12px;display:flex;align-items:center;justify-content:center;color:#0D2B2F}
+  input[type=text]{width:100%;background:var(--petrol-2);border:1px solid var(--line);
+    border-radius:10px;color:var(--cream);font-family:var(--body);font-weight:600;
+    font-size:17px;padding:12px 15px}
+  input[type=text]::placeholder{color:rgba(243,234,218,.3)}
+  input[type=text]:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:transparent}
+
+  .cats{display:flex;flex-direction:column;gap:8px}
+  .cat{display:flex;align-items:center;gap:13px;background:var(--petrol-2);
+    border:1px solid var(--line);border-radius:12px;padding:12px 15px;cursor:pointer;
+    transition:border-color .15s,background .15s}
+  .cat[aria-pressed="true"]{border-color:var(--amber);background:var(--petrol-3)}
+  .cat .box{width:20px;height:20px;flex:none;border-radius:6px;border:1.5px solid var(--dim);
+    display:flex;align-items:center;justify-content:center}
+  .cat[aria-pressed="true"] .box{background:var(--amber);border-color:var(--amber)}
+  .cat .box svg{opacity:0;width:12px;height:12px}
+  .cat[aria-pressed="true"] .box svg{opacity:1}
+  .cat .txt{flex:1;text-align:left;min-width:0}
+  .cat .t1{display:block;font-family:var(--display);font-size:15px;text-transform:uppercase;letter-spacing:-.01em}
+  .cat .t2{display:block;font-size:12.5px;color:var(--dim);line-height:1.35;font-weight:500}
+  .cat .n{font-family:var(--mono);font-size:11px;color:var(--dim);flex:none}
+  .allbtn{background:transparent;border:1px dashed var(--line);color:var(--dim);
+    font-family:var(--mono);font-size:11px;letter-spacing:.14em;padding:13px;font-weight:400}
+  .allbtn.on{border-style:solid;border-color:var(--amber);color:var(--amber)}
+
+  button{font-family:var(--body);font-weight:800;font-size:15.5px;letter-spacing:.03em;
+    text-transform:uppercase;background:var(--amber);color:#0D2B2F;border:0;border-radius:10px;
+    padding:16px;width:100%;cursor:pointer;transition:transform .12s,opacity .12s}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.3;cursor:default}
+  button:focus-visible{outline:2px solid var(--cream);outline-offset:2px}
+  .ghost{background:transparent;color:var(--dim);border:1px solid var(--line);font-weight:600}
+  .link{background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:11px;
+    letter-spacing:.12em;text-transform:uppercase;padding:11px;width:auto;margin:0 auto;display:block}
+
+  .board{display:grid;gap:7px 10px;padding-bottom:11px;border-bottom:1px solid var(--line);margin-bottom:14px}
+  .slot .nm{display:flex;justify-content:space-between;gap:6px;font-family:var(--mono);
+    font-size:11px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+  .slot .nm i{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .slot .bar{height:5px;background:rgba(243,234,218,.12);border-radius:3px;overflow:hidden}
+  .slot .bar i{display:block;height:100%;border-radius:3px;transition:width .45s cubic-bezier(.3,1,.4,1)}
+
+  .qmeta{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .question{font-family:var(--display);font-size:clamp(22px,6vw,30px);line-height:1.14;
+    letter-spacing:-.012em;margin-bottom:7px}
+  .unit{font-family:var(--mono);font-size:13px;color:var(--amber);letter-spacing:.06em}
+  .turn{display:flex;align-items:center;gap:10px;margin:22px 0 12px}
+  .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .turn b{font-family:var(--display);font-size:19px;text-transform:uppercase;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .turn .of{font-family:var(--mono);font-size:11px;color:var(--dim);margin-left:auto;flex:none}
+  .guess{font-family:var(--mono)!important;font-size:31px!important;text-align:center;letter-spacing:.04em}
+  .guess.mask{-webkit-text-security:disc}
+  .hint{font-family:var(--mono);font-size:11.5px;color:var(--dim);text-align:center;
+    margin-top:11px;line-height:1.6}
+
+  .truth{text-align:center;margin:4px 0}
+  .truth .val{font-family:var(--display);font-size:clamp(34px,11vw,52px);line-height:1.05;
+    color:var(--amber);letter-spacing:-.025em}
+  .truth .u{font-family:var(--mono);font-size:12.5px;color:var(--dim);letter-spacing:.06em}
+  .strahl{position:relative;height:84px;margin:14px 0 2px}
+  .axis{position:absolute;left:0;right:0;top:14px;height:1px;background:var(--line)}
+  .tick{position:absolute;top:2px;width:2px;height:25px;background:var(--amber);transform:translateX(-1px)}
+  .peg{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+  .peg .stem{width:1px;background:currentColor;opacity:.45}
+  .peg .bub{font-family:var(--mono);font-size:10px;font-weight:500;padding:1px 5px;border-radius:4px;
+    background:currentColor;color:#0D2B2F;white-space:nowrap}
+  .rows{border-top:1px solid var(--line)}
+  .row{display:flex;align-items:center;gap:9px;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .row .who{font-family:var(--display);font-size:15px;text-transform:uppercase;flex:1;min-width:0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .gv{font-family:var(--mono);font-size:16px}
+  .row .diff{font-family:var(--mono);font-size:10.5px;color:var(--dim);width:74px;text-align:right}
+  .row .pt{font-family:var(--display);font-size:12px;width:26px;text-align:right;opacity:0}
+  .row.win .pt{opacity:1}
+
+  .champ{text-align:center;padding:22px 0}
+  .champ .name{font-family:var(--display);font-size:clamp(36px,12vw,60px);line-height:.94;
+    text-transform:uppercase;letter-spacing:-.03em}
+  .final{font-family:var(--mono);font-size:13.5px;color:var(--dim);margin-top:20px;line-height:1.95}
+
+  /* ---------- Übungsmodus ---------- */
+  .solohead{display:flex;align-items:center;gap:11px;padding-bottom:11px;
+    border-bottom:1px solid var(--line);margin-bottom:14px}
+  .solohead .sc{font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    color:var(--dim);white-space:nowrap}
+  .solohead .prog{flex:1;height:5px;background:rgba(243,234,218,.12);border-radius:3px;overflow:hidden}
+  .solohead .prog i{display:block;height:100%;background:var(--amber);border-radius:3px;
+    transition:width .45s cubic-bezier(.3,1,.4,1)}
+  .cmp{display:flex;gap:9px;margin-top:16px}
+  .cmp>div{flex:1;background:var(--petrol-2);border:1px solid var(--line);
+    border-radius:11px;padding:11px 8px;text-align:center;min-width:0}
+  .cmp .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--dim)}
+  .cmp .v{font-family:var(--mono);font-size:18px;margin-top:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .score{text-align:center;margin:20px 0 4px}
+  .score .big{font-family:var(--display);font-size:54px;line-height:1;letter-spacing:-.03em}
+  .score .band{font-family:var(--display);font-size:14px;text-transform:uppercase;
+    letter-spacing:.06em;margin-top:7px}
+  .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:20px}
+  .statgrid>div{background:var(--petrol-2);border:1px solid var(--line);
+    border-radius:11px;padding:13px;text-align:center}
+  .statgrid .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--dim)}
+  .statgrid .v{font-family:var(--display);font-size:24px;margin-top:4px}
+
+  .links{display:flex;gap:6px;justify-content:center;align-items:center}
+  .links .link{margin:0}
+  .links .sep{color:rgba(243,234,218,.22);font-size:11px}
+  .resume{display:flex;align-items:center;gap:12px;background:var(--petrol-3);
+    border:1px solid var(--amber);border-radius:12px;padding:12px 14px;margin-bottom:18px;
+    text-align:left;cursor:pointer;width:100%}
+  .resume .rt{flex:1;min-width:0}
+  .resume .r1{font-family:var(--display);font-weight:900;font-size:14px;
+    text-transform:uppercase;letter-spacing:-.01em;color:var(--cream)}
+  .resume .r2{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:2px}
+  .resume .arr{color:var(--amber);font-size:20px;flex:none;font-family:var(--mono)}
+  .best{font-family:var(--mono);font-size:11px;color:var(--dim);
+    letter-spacing:.04em;margin-top:-8px;margin-bottom:18px}
+
+  .fade{animation:fade .26s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const CATS=[
+  {k:"Körper & Sport",  d:"Puls, Kalorien, Rekorde, Stadien"},
+  {k:"Welt & Natur",    d:"Tiere, Ozeane, Wetter, Weltall"},
+  {k:"Alltag & Zahlen", d:"Essen, Wohnen, Gewohnheiten"},
+  {k:"Geld & Business", d:"Preise, Gehälter, Konzerne"},
+  {k:"Tech & Kultur",   d:"Internet, Games, Film, Musik"}
+];
+
+/* [Kategorie, Frage, Antwort, Einheit] */
+const Q=[
+/* ===== 0 · Körper & Sport ===== */
+[0,"Wie oft schlägt ein Herz an einem Tag?",100000,"Schläge"],
+[0,"Wie viele Liter Blut pumpt das Herz pro Tag durch den Körper?",7000,"Liter"],
+[0,"Wie viele Kilometer Blutgefäße stecken in einem Menschen?",100000,"km"],
+[0,"Wie viele Liter Luft atmet ein Mensch pro Tag ein?",11000,"Liter"],
+[0,"Wie oft blinzelt ein Mensch an einem Tag?",15000,"mal"],
+[0,"Wie viele Kilometer läuft ein Bundesliga-Spieler pro Spiel?",11,"km"],
+[0,"Wie viele Kalorien verbrennt man bei einem Marathon?",2700,"kcal"],
+[0,"Wie viele Liter Schweiß verliert man bei einem Marathon?",3,"Liter"],
+[0,"Wie viel wiegt ein menschliches Gehirn?",1400,"Gramm"],
+[0,"Wie viele Jahre seines Lebens verschläft ein 80-Jähriger?",26,"Jahre"],
+[0,"Wie viele Kalorien stecken in einem Kilo Körperfett?",7000,"kcal"],
+[0,"Wie viele Schritte macht ein Deutscher im Schnitt pro Tag?",5200,"Schritte"],
+[0,"Wie viele Millimeter wachsen Haare pro Monat?",12,"Millimeter"],
+[0,"Wie viel Prozent des männlichen Körpers ist Wasser?",60,"Prozent"],
+[0,"Wie schnell war der schnellste je gemessene Tennis-Aufschlag?",263,"km/h"],
+[0,"Wie schnell lief Usain Bolt bei seinem 100-m-Weltrekord im Schnitt?",37.6,"km/h"],
+[0,"Wie viele Sekunden brauchte Usain Bolt für seinen 100-m-Weltrekord?",9.58,"Sekunden"],
+[0,"Wie hoch ist der Hochsprung-Weltrekord der Männer?",245,"Zentimeter"],
+[0,"Wie weit ist der Weitsprung-Weltrekord der Männer?",895,"Zentimeter"],
+[0,"Wie viele Liegestütze schafft der Weltrekordhalter in einer Stunde?",2900,"Liegestütze"],
+[0,"Wie viele Tore fallen im Schnitt pro Bundesliga-Spiel?",3.1,"Tore"],
+[0,"Wie viele Zuschauer passen ins Stadion des 1. FC Köln?",50000,"Zuschauer"],
+[0,"Wie viele Zuschauer passen ins Camp Nou in Barcelona?",99000,"Zuschauer"],
+[0,"Wie viele Menschen weltweit spielen aktiv Fußball?",250000000,"Menschen"],
+[0,"Wie viel wiegt eine olympische Langhantelstange?",20,"Kilogramm"],
+[0,"Wie viele Wochen braucht ein gebrochener Knochen zum Heilen?",6,"Wochen"],
+[0,"Wie viele Kilometer rennt ein Tennisprofi in einem Fünfsatz-Match?",5,"km"],
+[0,"Wie viele Knochen hat ein erwachsener Mensch?",206,"Knochen"],
+[0,"Wie lang ist der Dünndarm eines Erwachsenen?",6,"Meter"],
+[0,"Wie viele Nervenzellen hat das menschliche Gehirn?",86000000000,"Nervenzellen"],
+[0,"Wie viele Liter Speichel produziert ein Mensch pro Tag?",1.5,"Liter"],
+[0,"Wie viele Geschmacksknospen hat ein Mensch?",10000,"Knospen"],
+[0,"Wie viele Schweißdrüsen hat ein Mensch?",3000000,"Drüsen"],
+[0,"Wie viele Kilogramm Nahrung isst ein Mensch pro Jahr?",500,"Kilogramm"],
+[0,"Wie viele Tonnen Nahrung isst ein Mensch in seinem ganzen Leben?",30,"Tonnen"],
+[0,"Wie schnell strömt die Luft beim Niesen aus der Nase?",160,"km/h"],
+[0,"Wie viel Prozent des Sauerstoffs verbraucht allein das Gehirn?",20,"Prozent"],
+[0,"Wie viele Kalorien verbraucht das Gehirn pro Tag?",400,"kcal"],
+[0,"Wie viele Stunden braucht Essen, um den Magen zu verlassen?",4,"Stunden"],
+[0,"Wie viele Liter Urin produziert ein Mensch pro Jahr?",550,"Liter"],
+[0,"Wie viele Kilometer legt ein Handballer pro Spiel zurück?",5,"km"],
+[0,"Wie viele Kilometer fährt das Feld bei der Tour de France insgesamt?",3400,"km"],
+[0,"Wie viele Höhenmeter sammelt die Tour de France insgesamt?",50000,"Höhenmeter"],
+[0,"Wie viele Kalorien verbraucht ein Tour-de-France-Fahrer pro Tag?",6000,"kcal"],
+[0,"Wie schnell fliegt ein Ball bei einem Elfmeter?",110,"km/h"],
+[0,"Wie viele Minuten ist der Ball in einem Fußballspiel effektiv im Spiel?",55,"Minuten"],
+[0,"Wie viele Pässe spielt ein Team im Schnitt pro Bundesliga-Spiel?",450,"Pässe"],
+[0,"Wie viele Fouls gibt es im Schnitt pro Bundesliga-Spiel?",25,"Fouls"],
+[0,"Wie viele Kilometer läuft ein Schiedsrichter pro Spiel?",11,"km"],
+[0,"Wie viel wiegt ein Fußball?",430,"Gramm"],
+[0,"Wie hoch ist ein Fußballtor?",2.44,"Meter"],
+[0,"Wie breit ist ein Fußballtor?",7.32,"Meter"],
+[0,"Wie viele Grübchen hat ein Golfball?",336,"Grübchen"],
+[0,"Wie schnell ist ein Badminton-Schmetterball maximal?",493,"km/h"],
+[0,"Wie viele Kalorien hat ein Liter Bier?",430,"kcal"],
+[0,"Wie hoch ist der Grundumsatz eines erwachsenen Mannes pro Tag?",1700,"kcal"],
+[0,"Wie lange hält der Weltrekordhalter die Luft an?",24,"Minuten"],
+[0,"Wie tief geht der Freitauch-Weltrekord?",214,"Meter"],
+[0,"Wie alt wurde der älteste Mensch der Welt?",122,"Jahre"],
+[0,"Wie groß war der größte Mensch der Welt?",272,"Zentimeter"],
+[0,"Wie viel wiegt ein Neugeborenes im Schnitt?",3400,"Gramm"],
+[0,"Wie viele Knochen hat ein Neugeborenes?",300,"Knochen"],
+[0,"Wie viele Billionen Zellen hat der menschliche Körper?",37,"Billionen"],
+[0,"Wie viele Millionen rote Blutkörperchen bildet der Körper pro Sekunde?",2.4,"Millionen"],
+[0,"Wie hoch springt ein NBA-Spieler im Schnitt aus dem Stand?",71,"Zentimeter"],
+[0,"Wie viele Punkte erzielt ein NBA-Team im Schnitt pro Spiel?",115,"Punkte"],
+[0,"Wie viele Kilometer legt ein NBA-Spieler pro Spiel zurück?",4,"km"],
+[0,"Wie viele Sekunden dauert der 400-Meter-Weltrekord der Männer?",43.03,"Sekunden"],
+[0,"Wie viele Minuten braucht der Marathon-Weltrekordhalter?",120,"Minuten"],
+[0,"Wie viele Kilometer läuft der 24-Stunden-Weltrekordhalter?",319,"km"],
+[0,"Wie viel Prozent Körperfett hat ein Profifußballer?",10,"Prozent"],
+[0,"Wie viele Kalorien verbrennt eine Stunde Fußball?",700,"kcal"],
+[0,"Wie viel Gramm Protein stecken in einem Ei?",7,"Gramm"],
+[0,"Wie hoch hängt ein Volleyballnetz bei den Männern?",243,"Zentimeter"],
+[0,"Wie viele Bänder stabilisieren ein Kniegelenk?",4,"Bänder"],
+
+/* ===== 1 · Welt & Natur ===== */
+[1,"Wie viele Milliarden Bäume stehen auf der Erde?",3000,"Milliarden"],
+[1,"Wie viele Blitze schlagen weltweit pro Sekunde ein?",100,"Blitze"],
+[1,"Wie tief ist die tiefste Stelle im Marianengraben?",10994,"Meter"],
+[1,"Wie viel wiegt eine mittelgroße Schönwetterwolke?",500,"Tonnen"],
+[1,"Wie viele Inseln gehören zu Indonesien?",17500,"Inseln"],
+[1,"Wie alt kann ein Mammutbaum werden?",3000,"Jahre"],
+[1,"Wie hoch ist der höchste Baum der Welt?",116,"Meter"],
+[1,"Wie viele Kilometer fliegt eine Küstenseeschwalbe pro Jahr?",70000,"km"],
+[1,"Wie viele Eier legt eine Bienenkönigin an einem Tag?",2000,"Eier"],
+[1,"Wie viele Bienen leben im Sommer in einem Bienenstock?",50000,"Bienen"],
+[1,"Wie viele Kilometer fliegen Bienen zusammen für ein Kilo Honig?",120000,"km"],
+[1,"Wie oft schlägt das Herz einer Maus pro Minute?",600,"mal"],
+[1,"Wie viele Zähne hat ein Weißer Hai gleichzeitig im Maul?",300,"Zähne"],
+[1,"Wie lange kann ein Pottwal die Luft anhalten?",90,"Minuten"],
+[1,"Wie tief taucht ein Pottwal?",2000,"Meter"],
+[1,"Wie viel wiegt ein Straußenei?",1400,"Gramm"],
+[1,"Wie viele Insektenarten sind bisher bekannt?",1000000,"Arten"],
+[1,"Wie viel Prozent aller bekannten Tierarten sind Insekten?",80,"Prozent"],
+[1,"Wie viele Liter Wasser trinkt ein Kamel auf einmal?",100,"Liter"],
+[1,"Wie oft schlägt ein Kolibri pro Sekunde mit den Flügeln?",50,"mal"],
+[1,"Wie viele Liter Milch gibt eine Kuh pro Tag?",25,"Liter"],
+[1,"Wie schwer war der schwerste je gezüchtete Kürbis?",1200,"Kilogramm"],
+[1,"Wie hoch fliegt ein Passagierflugzeug auf Reiseflughöhe?",11000,"Meter"],
+[1,"Wie viele aktive Vulkane gibt es weltweit?",1500,"Vulkane"],
+[1,"Wie lange braucht Sonnenlicht bis zur Erde?",8,"Minuten"],
+[1,"Wie lange ist eine Elefantenkuh trächtig?",22,"Monate"],
+[1,"Wie schwer ist ein ausgewachsener Blauwal?",150,"Tonnen"],
+[1,"Wie lang ist die Chinesische Mauer insgesamt?",21196,"km"],
+[1,"Wie tief ist der Ozean im weltweiten Durchschnitt?",3700,"Meter"],
+[1,"Wie viel Prozent des Amazonas-Regenwaldes sind schon gerodet?",17,"Prozent"],
+[1,"Wie viele Liter Wasser stürzen pro Sekunde die Niagarafälle hinab?",2400,"Liter"],
+[1,"Wie hoch ist der höchste Wasserfall der Welt?",979,"Meter"],
+[1,"Wie lang ist der Erdumfang am Äquator?",40075,"km"],
+[1,"Wie viele Millionen Kilometer ist die Sonne von der Erde entfernt?",150,"Millionen km"],
+[1,"Wie heiß ist die Oberfläche der Sonne?",5500,"Grad Celsius"],
+[1,"Wie viele Milliarden Sterne hat die Milchstraße?",200,"Milliarden"],
+[1,"Wie schnell dreht sich die Erde am Äquator?",1670,"km/h"],
+[1,"Wie viele Kilometer pro Sekunde fliegt die Erde um die Sonne?",30,"km/s"],
+[1,"Wie schnell war der stärkste je gemessene Windstoß?",408,"km/h"],
+[1,"Wie viele Millimeter Regen fallen pro Jahr in Deutschland?",790,"Millimeter"],
+[1,"Wie kalt war die kälteste je gemessene Temperatur der Erde?",-89,"Grad Celsius"],
+[1,"Wie heiß war die heißeste je gemessene Temperatur der Erde?",56.7,"Grad Celsius"],
+[1,"Wie hoch war die höchste je gemessene Welle?",30,"Meter"],
+[1,"Wie viel Salz steckt in einem Liter Meerwasser?",35,"Gramm"],
+[1,"Wie viele Millionen Tonnen Plastik landen pro Jahr im Meer?",8,"Mio. Tonnen"],
+[1,"Wie viele Vogelarten gibt es weltweit?",11000,"Arten"],
+[1,"Wie viele Fischarten sind bekannt?",35000,"Arten"],
+[1,"Wie viele Spinnenarten gibt es?",50000,"Arten"],
+[1,"Wie viele Ameisen leben in einem großen Ameisenhaufen?",1000000,"Ameisen"],
+[1,"Wie viele Stunden schläft eine Giraffe pro Tag?",2,"Stunden"],
+[1,"Wie viele Stunden schläft ein Koala pro Tag?",20,"Stunden"],
+[1,"Wie viele Tage kommt ein Kamel ohne Wasser aus?",14,"Tage"],
+[1,"Wie schnell schwimmt ein Schwertfisch?",100,"km/h"],
+[1,"Wie schnell ist ein Wanderfalke im Sturzflug?",320,"km/h"],
+[1,"Wie viele Millionen Geruchszellen hat eine Hundenase?",220,"Millionen"],
+[1,"Wie alt wird ein Grönlandhai?",400,"Jahre"],
+[1,"Wie viel wiegt das Herz eines Blauwals?",180,"Kilogramm"],
+[1,"Wie viele Stacheln hat ein Igel?",8000,"Stacheln"],
+[1,"Wie viele Muskeln stecken in einem Elefantenrüssel?",40000,"Muskeln"],
+[1,"Wie viele Kilogramm frisst ein Elefant pro Tag?",150,"Kilogramm"],
+[1,"Wie viele Liter Wasser trinkt ein Elefant pro Tag?",150,"Liter"],
+[1,"Wie viele Kilogramm Sauerstoff produziert ein Baum pro Jahr?",100,"Kilogramm"],
+[1,"Wie weit ist der Mond von der Erde entfernt?",384400,"km"],
+[1,"Wie viele Monde hat der Jupiter?",95,"Monde"],
+[1,"Wie viele Erdtage dauert ein Tag auf der Venus?",243,"Erdtage"],
+[1,"Wie kalt ist es im freien Weltall?",-270,"Grad Celsius"],
+[1,"Wie groß ist der Durchmesser der Sonne?",1392000,"km"],
+[1,"Wie viele Erden würden in die Sonne passen?",1300000,"Erden"],
+[1,"Wie viele Tonnen Meteoritenmaterial treffen pro Tag auf die Erde?",100,"Tonnen"],
+[1,"Wie heiß ist der Erdkern?",5200,"Grad Celsius"],
+[1,"Wie viele Erdbeben werden weltweit pro Jahr registriert?",500000,"Erdbeben"],
+[1,"Wie viele Baumarten gibt es weltweit?",73000,"Arten"],
+[1,"Wie viel Prozent des Sauerstoffs produzieren die Meere?",50,"Prozent"],
+[1,"Wie viele Zentimeter wächst Bambus an einem Tag?",90,"Zentimeter"],
+[1,"Wie viele Jahre braucht eine Plastikflasche zum Zerfallen?",450,"Jahre"],
+
+/* ===== 2 · Alltag & Zahlen ===== */
+[2,"Wie viele Reiskörner sind in einem Kilo Reis?",50000,"Körner"],
+[2,"Wie viele Kaffeebohnen braucht man für einen Espresso?",50,"Bohnen"],
+[2,"Wie viele Liter Kaffee trinkt ein Deutscher pro Jahr?",165,"Liter"],
+[2,"Wie viele Liter Bier trinkt ein Deutscher pro Jahr?",88,"Liter"],
+[2,"Wie viele Eier isst ein Deutscher pro Jahr?",240,"Eier"],
+[2,"Wie viel Fleisch isst ein Deutscher pro Jahr?",52,"Kilogramm"],
+[2,"Wie viele Kilometer fährt ein deutsches Auto pro Jahr?",13000,"km"],
+[2,"Wie viele Autos sind in Deutschland zugelassen?",49000000,"Autos"],
+[2,"Wie oft entsperrt ein Mensch sein Handy an einem Tag?",80,"mal"],
+[2,"Wie viele Minuten am Tag ist ein Deutscher am Smartphone?",150,"Minuten"],
+[2,"Wie viele Wörter spricht ein Mensch an einem Tag?",16000,"Wörter"],
+[2,"Wie viele Wörter hat ein durchschnittlicher Roman?",80000,"Wörter"],
+[2,"Wie viele Träume hat ein Mensch pro Nacht?",5,"Träume"],
+[2,"Wie oft lacht ein Kind an einem Tag?",300,"mal"],
+[2,"Wie viele Liter Wasser verbraucht eine 10-Minuten-Dusche?",120,"Liter"],
+[2,"Wie viele Liter Wasser verbraucht ein Deutscher pro Tag zu Hause?",125,"Liter"],
+[2,"Wie viele Liter Wasser stecken in einem Kilo Rindfleisch?",15000,"Liter"],
+[2,"Wie viele Liter Wasser stecken hinter einer einzigen Tasse Kaffee?",130,"Liter"],
+[2,"Wie viele Einzelteile hat ein modernes Auto?",30000,"Teile"],
+[2,"Wie viele Stufen führen im Eiffelturm bis zur Spitze?",1665,"Stufen"],
+[2,"Wie viele Stufen sind es im Kölner Dom bis zur Aussichtsplattform?",533,"Stufen"],
+[2,"Wie viele Fenster hat das Empire State Building?",6500,"Fenster"],
+[2,"Wie viele Kilometer Strich schreibt ein einzelner Bleistift?",56,"km"],
+[2,"Wie viele Legosteine werden pro Sekunde produziert?",1100,"Steine"],
+[2,"Wie oft müsste man ein Blatt Papier falten, bis es den Mond erreicht?",42,"mal"],
+[2,"Wie viele Liter passen in eine normale Badewanne?",150,"Liter"],
+[2,"Wie viele Blätter hat eine Rolle Toilettenpapier?",200,"Blätter"],
+[2,"Wie viele Milliarden Zigaretten werden in Deutschland pro Jahr geraucht?",65,"Milliarden"],
+[2,"Wie viele Minuten schaut ein Deutscher pro Tag fern?",190,"Minuten"],
+[2,"Wie viele Menschen leben in der Metropolregion Tokio?",37000000,"Menschen"],
+[2,"Wie viele Zahnbürsten verbraucht ein Mensch in seinem Leben?",300,"Zahnbürsten"],
+[2,"Wie viele Tage seines Lebens putzt ein Mensch Zähne?",38,"Tage"],
+[2,"Wie viele Mahlzeiten isst ein Mensch in seinem Leben?",80000,"Mahlzeiten"],
+[2,"Wie viele Pizzen isst ein Deutscher pro Jahr?",12,"Pizzen"],
+[2,"Wie viele Kilo Kartoffeln isst ein Deutscher pro Jahr?",60,"Kilogramm"],
+[2,"Wie viele Kilo Schokolade isst ein Deutscher pro Jahr?",9,"Kilogramm"],
+[2,"Wie viele Kilo Zucker isst ein Deutscher pro Jahr?",33,"Kilogramm"],
+[2,"Wie viele Kilo Brot isst ein Deutscher pro Jahr?",42,"Kilogramm"],
+[2,"Wie viele Liter Milch trinkt ein Deutscher pro Jahr?",48,"Liter"],
+[2,"Wie viele Liter Mineralwasser trinkt ein Deutscher pro Jahr?",130,"Liter"],
+[2,"Wie viele Bäume braucht man für eine Tonne Papier?",14,"Bäume"],
+[2,"Wie viele Kilo Papier verbraucht ein Deutscher pro Jahr?",220,"Kilogramm"],
+[2,"Wie viele Kilo Müll produziert ein Deutscher pro Jahr?",480,"Kilogramm"],
+[2,"Wie viele Kilo Verpackungsmüll produziert ein Deutscher pro Jahr?",230,"Kilogramm"],
+[2,"Wie viele Kleidungsstücke kauft ein Deutscher pro Jahr?",60,"Teile"],
+[2,"Wie viele Kleidungsstücke hängen in einem deutschen Kleiderschrank?",95,"Teile"],
+[2,"Wie viele Stunden arbeitet ein Deutscher im Schnitt pro Woche?",35,"Stunden"],
+[2,"Wie viele Krankheitstage hat ein Deutscher pro Jahr?",15,"Tage"],
+[2,"Wie viele Minuten pendelt ein Deutscher pro Tag?",45,"Minuten"],
+[2,"Wie viele Kilometer pendelt ein Deutscher pro Weg zur Arbeit?",17,"km"],
+[2,"Wie viele Fahrgäste befördert die Kölner KVB pro Tag?",800000,"Fahrgäste"],
+[2,"Wie viele Kilometer Schienennetz hat die Deutsche Bahn?",33000,"km"],
+[2,"Wie viele Kilometer Autobahn gibt es in Deutschland?",13200,"km"],
+[2,"Wie viele Brücken gibt es an deutschen Autobahnen und Bundesstraßen?",40000,"Brücken"],
+[2,"Wie viele Ampeln gibt es in Deutschland?",100000,"Ampeln"],
+[2,"Wie viele Bäckereibetriebe gibt es in Deutschland?",9600,"Betriebe"],
+[2,"Wie viele Apotheken gibt es in Deutschland?",17000,"Apotheken"],
+[2,"Wie viele Katzen leben in deutschen Haushalten?",15700000,"Katzen"],
+[2,"Wie viele Hunde leben in deutschen Haushalten?",10500000,"Hunde"],
+[2,"Wie viele Kinder werden pro Jahr in Deutschland geboren?",690000,"Kinder"],
+[2,"Wie viele Menschen werden weltweit pro Tag geboren?",380000,"Menschen"],
+[2,"Wie viele Menschen sitzen gerade gleichzeitig in einem Flugzeug?",1000000,"Menschen"],
+[2,"Wie viele Menschen leben in Köln?",1090000,"Menschen"],
+[2,"Wie viele Millionen Besucher hat der Kölner Dom pro Jahr?",6,"Millionen"],
+[2,"Wie viele Teilnehmer laufen im Kölner Rosenmontagszug mit?",12000,"Teilnehmer"],
+[2,"Wie viele Wörter passen auf eine eng beschriebene A4-Seite?",500,"Wörter"],
+[2,"Wie viele Buchstaben hat das längste Wort im Duden?",44,"Buchstaben"],
+[2,"Wie viele Kilowattstunden Strom verbraucht ein Zweipersonenhaushalt pro Jahr?",3000,"Kilowattstunden"],
+[2,"Wie viele Cent kostet eine Kilowattstunde Strom in Deutschland?",35,"Cent"],
+[2,"Wie viele Liter verbraucht ein deutsches Auto auf 100 Kilometer?",7,"Liter"],
+[2,"Wie viele Sitzplätze hat ein ICE?",460,"Sitzplätze"],
+[2,"Wie viele Millionen Passagiere fliegen pro Jahr über Köln/Bonn?",9,"Millionen"],
+[2,"Wie viele Flugzeuge sind gerade gleichzeitig in der Luft?",10000,"Flugzeuge"],
+[2,"Wie viele Millionen Erwerbstätige gibt es in Deutschland?",46,"Millionen"],
+[2,"Wie viele Betriebe hat das deutsche Handwerk?",1000000,"Betriebe"],
+
+/* ===== 3 · Geld & Business ===== */
+[3,"Wie viele Millionen Dollar kostet ein 30-Sekunden-Spot beim Super Bowl?",7,"Mio. Dollar"],
+[3,"Wie viel verdient ein Bundesliga-Profi im Schnitt pro Jahr?",1500000,"Euro"],
+[3,"Wie hoch ist der gesetzliche Mindestlohn in Deutschland 2026?",13.9,"Euro"],
+[3,"Wie hoch ist das durchschnittliche Bruttogehalt in Deutschland pro Monat?",4300,"Euro"],
+[3,"Wie viel kostet ein Big Mac in Deutschland?",6,"Euro"],
+[3,"Wie viele Millionen Dollar kostet ein neuer Airbus A320?",110,"Mio. Dollar"],
+[3,"Wie viel wiegt ein Standard-Goldbarren aus dem Tresor?",12.4,"Kilogramm"],
+[3,"Wie viele Menschen arbeiten weltweit für Amazon?",1500000,"Menschen"],
+[3,"Wie viele Pakete stellt DHL pro Tag in Deutschland zu?",6000000,"Pakete"],
+[3,"Wie viele Milliarden Dollar Umsatz macht Apple pro Jahr?",390,"Milliarden"],
+[3,"Wie viele Millionen Euro kostet ein Formel-1-Auto?",15,"Mio. Euro"],
+[3,"Wie viel kostet ein einzelnes Formel-1-Lenkrad?",50000,"Euro"],
+[3,"Wie viele Millionen Euro brachte der teuerste Fußball-Transfer ein?",222,"Mio. Euro"],
+[3,"Wie viel kostet ein Jahr Studium an einer US-Eliteuni?",60000,"Dollar"],
+[3,"Wie viele Millionäre leben in Deutschland?",1600000,"Millionäre"],
+[3,"Wie viele Millionen Euro kostet der Bau von einem Kilometer Autobahn?",10,"Mio. Euro"],
+[3,"Wie viele Millionen Euro kostet ein ICE-Zug?",33,"Mio. Euro"],
+[3,"Wie viele Millionen Dollar kostet eine Boeing 747?",400,"Mio. Dollar"],
+[3,"Wie hoch ist die Durchschnittsmiete pro Quadratmeter in Köln?",14,"Euro"],
+[3,"Wie viel kostet eine Kugel Eis in Deutschland im Schnitt?",1.8,"Euro"],
+[3,"Wie viel kostet ein Führerschein in Deutschland?",3000,"Euro"],
+[3,"Wie viel gibt ein Deutscher pro Jahr für Lebensmittel aus?",3000,"Euro"],
+[3,"Wie hoch ist die durchschnittliche Altersrente in Deutschland pro Monat?",1100,"Euro"],
+[3,"Wie viel wiegt eine Million Euro in 500-Euro-Scheinen?",2.3,"Kilogramm"],
+[3,"Wie viele Milliarden Euro-Banknoten sind im Umlauf?",30,"Milliarden"],
+[3,"Wie viel Prozent Trinkgeld sind in Deutschland üblich?",10,"Prozent"],
+[3,"Wie viele McDonald's-Filialen gibt es weltweit?",40000,"Filialen"],
+[3,"Wie viele IKEA-Einrichtungshäuser gibt es weltweit?",480,"Häuser"],
+[3,"In welchem Jahr wurde IKEA gegründet?",1943,"Jahr"],
+[3,"Wie viel kostet ein Liter Super-Benzin in Deutschland?",1.75,"Euro"],
+[3,"Wie viel kostet ein Kilo Safran?",5000,"Euro"],
+[3,"Wie viel kostet ein Kilo weiße Trüffel?",4000,"Euro"],
+[3,"Wie viel kostet ein Kilo Kopi Luwak, der teuerste Kaffee der Welt?",600,"Euro"],
+[3,"Wie viel kostet ein durchschnittlicher Neuwagen in Deutschland?",45000,"Euro"],
+[3,"Wie viele Millionen Euro kostet ein Bugatti Chiron?",3,"Mio. Euro"],
+[3,"Wie viel kostet ein durchschnittliches Einfamilienhaus in Deutschland?",400000,"Euro"],
+[3,"Wie viel kostet ein Quadratmeter Bauland in Deutschland im Schnitt?",200,"Euro"],
+[3,"Wie viel kostet eine Hochzeit in Deutschland im Schnitt?",15000,"Euro"],
+[3,"Wie viel kostet ein Kind bis zum 18. Geburtstag?",150000,"Euro"],
+[3,"Wie viele Milliarden Euro Schulden hat der deutsche Staat?",2500,"Milliarden"],
+[3,"Wie viele Milliarden Euro umfasst der deutsche Bundeshaushalt pro Jahr?",480,"Milliarden"],
+[3,"Wie viele Milliarden Euro gibt Deutschland pro Jahr für Verteidigung aus?",90,"Milliarden"],
+[3,"Wie viele Milliarden Euro Umsatz macht Volkswagen pro Jahr?",320,"Milliarden"],
+[3,"Wie viele Menschen arbeiten weltweit für Volkswagen?",680000,"Menschen"],
+[3,"Wie viele Millionen Autos baut VW pro Jahr?",9,"Millionen"],
+[3,"Wie viele Milliarden Dollar Umsatz macht Nike pro Jahr?",51,"Milliarden"],
+[3,"Wie viel kostet ein Paar Nike-Sneaker in der Herstellung?",20,"Euro"],
+[3,"Wie viele Dollar kostet die Herstellung eines iPhones?",550,"Dollar"],
+[3,"Wie viele Millionen Euro zahlt ein Sponsor pro Jahr für ein Bundesliga-Trikot?",30,"Mio. Euro"],
+[3,"Wie viele Millionen Euro zahlen die TV-Sender pro Saison für die Bundesliga?",1100,"Mio. Euro"],
+[3,"Wie viele Millionen Euro Prämie gibt es für den Champions-League-Sieg?",20,"Mio. Euro"],
+[3,"Wie viel kostet eine Stehplatz-Dauerkarte beim 1. FC Köln?",200,"Euro"],
+[3,"Wie viel verdient ein Bundesliga-Schiedsrichter pro Spiel?",5000,"Euro"],
+[3,"Wie viel verdient ein Erzieher in Deutschland brutto pro Monat?",3400,"Euro"],
+[3,"Wie viel verdient ein Handwerksmeister brutto pro Monat?",4200,"Euro"],
+[3,"Wie viel verdient ein Lufthansa-Pilot pro Jahr?",150000,"Euro"],
+[3,"Wie hoch ist der durchschnittliche Stundenlohn in Deutschland?",25,"Euro"],
+[3,"Wie viel kostet eine Stunde beim Anwalt?",250,"Euro"],
+[3,"Wie viel kostet ein Tag im Krankenhaus?",800,"Euro"],
+[3,"Wie viel kostet eine Kinokarte in Deutschland im Schnitt?",10,"Euro"],
+[3,"Wie viele Milliarden Euro Umsatz macht die deutsche Gastronomie pro Jahr?",95,"Milliarden"],
+[3,"Wie viel kostet ein Kölsch in einer Kölner Kneipe?",2.3,"Euro"],
+[3,"Wie viel kostet ein 30-Sekunden-Werbespot zur Primetime im deutschen TV?",50000,"Euro"],
+[3,"Wie viel verdient ein Influencer mit 100.000 Followern pro Post?",1000,"Euro"],
+[3,"Wie viel verdient ein YouTuber pro 1.000 Videoaufrufe?",2,"Euro"],
+[3,"Wie viele Milliarden Dollar Umsatz macht die Games-Branche pro Jahr?",190,"Milliarden"],
+[3,"Wie viele Milliarden Dollar Umsatz macht Netflix pro Jahr?",39,"Milliarden"],
+[3,"Wie viele Millionen Abonnenten hat Netflix weltweit?",300,"Millionen"],
+[3,"Wie viel kostet ein Quadratmeter Eigentumswohnung in München?",9000,"Euro"],
+[3,"Wie viel kostet ein Quadratmeter Eigentumswohnung in Köln?",5000,"Euro"],
+[3,"Wie viel Geld hat ein Deutscher im Schnitt auf der hohen Kante?",30000,"Euro"],
+[3,"Wie viel Bargeld trägt ein Deutscher im Portemonnaie?",100,"Euro"],
+[3,"Wie viel Prozent aller Zahlungen in Deutschland laufen bar?",50,"Prozent"],
+[3,"Wie viele Filialen hat Aldi in Deutschland?",4200,"Filialen"],
+[3,"Wie viele Menschen arbeiten bei der Deutschen Bahn?",330000,"Menschen"],
+
+/* ===== 4 · Tech & Kultur ===== */
+[4,"Wie viele Stunden Video werden pro Minute auf YouTube hochgeladen?",500,"Stunden"],
+[4,"Wie viele Google-Suchen laufen pro Sekunde?",99000,"Suchen"],
+[4,"Wie viele Milliarden E-Mails werden pro Tag verschickt?",350,"Milliarden"],
+[4,"Wie viele Millionen Songs liegen auf Spotify?",100,"Millionen"],
+[4,"Wie viele Milliarden Fotos werden pro Tag hochgeladen?",5,"Milliarden"],
+[4,"Wie viele Milliarden Transistoren hat ein moderner Smartphone-Chip?",20,"Milliarden"],
+[4,"Wie viele aktive Satelliten umkreisen die Erde?",10000,"Satelliten"],
+[4,"Wie schnell fliegt die ISS um die Erde?",28000,"km/h"],
+[4,"Wie oft umrundet die ISS die Erde an einem Tag?",16,"mal"],
+[4,"Wie viele Minuten braucht ein Funksignal mindestens bis zum Mars?",4,"Minuten"],
+[4,"Wie viele Zeichen darf ein klassischer Tweet maximal haben?",280,"Zeichen"],
+[4,"Wie viele Wörter hat der erste Harry-Potter-Band?",77000,"Wörter"],
+[4,"Wie viele offizielle Emojis gibt es?",3800,"Emojis"],
+[4,"Wie viele Filme produziert Bollywood pro Jahr?",1500,"Filme"],
+[4,"Wie viele Milliarden Dollar spielte Avatar weltweit ein?",2.9,"Milliarden"],
+[4,"Wie viele Millionen Dollar kostete die Produktion von GTA 5?",265,"Mio. Dollar"],
+[4,"Wie viele Millionen Exemplare von GTA 5 wurden verkauft?",200,"Millionen"],
+[4,"Wie viele Millionen Kopien von Minecraft wurden verkauft?",300,"Millionen"],
+[4,"Wie viele Milliarden Menschen spielen weltweit Videospiele?",3,"Milliarden"],
+[4,"Wie viele Millionen Zeilen Code stecken in Windows?",50,"Millionen"],
+[4,"Wie viele Ladezyklen hält ein Smartphone-Akku durch?",500,"Ladezyklen"],
+[4,"Wie viele Menschen arbeiten weltweit für Google?",180000,"Menschen"],
+[4,"Wie viele Millionen Artikel hat die deutsche Wikipedia?",3,"Millionen"],
+[4,"Wie viele Millionen Artikel hat die englische Wikipedia?",7,"Millionen"],
+[4,"Wie viele Fotos macht ein Mensch pro Jahr mit dem Handy?",1000,"Fotos"],
+[4,"Wie viele Tasten hat eine deutsche Standardtastatur?",105,"Tasten"],
+[4,"Wie viele Sekunden dauert Bohemian Rhapsody von Queen?",355,"Sekunden"],
+[4,"Wie viele Episoden hat Game of Thrones?",73,"Episoden"],
+[4,"Wie viele Pokémon gab es in der ersten Generation?",151,"Pokémon"],
+[4,"In welchem Jahr wurde Spotify gegründet?",2006,"Jahr"],
+[4,"Wie viele Milliarden Nachrichten laufen pro Tag über WhatsApp?",100,"Milliarden"],
+[4,"Wie viele Milliarden Menschen nutzen WhatsApp?",3,"Milliarden"],
+[4,"Wie viele Milliarden Menschen nutzen Instagram?",2,"Milliarden"],
+[4,"Wie viele Milliarden Menschen nutzen TikTok?",1.6,"Milliarden"],
+[4,"Wie viele Minuten pro Tag verbringt ein Teenager mit Social Media?",180,"Minuten"],
+[4,"Wie viele Milliarden Dollar Werbeumsatz macht Google pro Jahr?",240,"Milliarden"],
+[4,"Wie viel Prozent des weltweiten Stroms verbraucht das Internet?",2,"Prozent"],
+[4,"Wie viele Millionen Bitcoin wird es maximal geben?",21,"Millionen"],
+[4,"Wie viele Terawattstunden Strom verbraucht das Bitcoin-Netzwerk pro Jahr?",150,"Terawattstunden"],
+[4,"Wie viele Kilometer Unterseekabel liegen auf dem Meeresgrund?",1400000,"km"],
+[4,"Wie viele Sprachen unterstützt Google Translate?",130,"Sprachen"],
+[4,"Wie viele Stichwörter hat der Duden?",148000,"Wörter"],
+[4,"Wie viele Wörter benutzt ein Deutscher aktiv im Alltag?",12000,"Wörter"],
+[4,"Wie viele Bücher erscheinen pro Jahr neu in Deutschland?",70000,"Bücher"],
+[4,"Wie viele Milliarden Bibeln wurden bisher verkauft?",5,"Milliarden"],
+[4,"Wie viele Millionen Harry-Potter-Bücher wurden verkauft?",600,"Millionen"],
+[4,"Wie viele Millionen Exemplare verkaufte Michael Jacksons Thriller?",70,"Millionen"],
+[4,"Wie viele Millionen Menschen sahen das WM-Finale 2014 weltweit?",1000,"Millionen"],
+[4,"Wie viele Millionen Menschen schauen in den USA den Super Bowl?",120,"Millionen"],
+[4,"Wie viele Millionen Menschen schauen den Eurovision Song Contest?",160,"Millionen"],
+[4,"Wie viele Legosteine gibt es rechnerisch pro Mensch auf der Erde?",100,"Steine"],
+[4,"Wie viele Millionen Rubik's Cubes wurden verkauft?",450,"Millionen"],
+[4,"Wie schnell ist der Weltrekord im Lösen eines Rubik's Cube?",3.13,"Sekunden"],
+[4,"Wie viele Züge dauert eine durchschnittliche Schachpartie?",40,"Züge"],
+[4,"Wie viele Millionen Apps gibt es im App Store?",1.8,"Millionen"],
+[4,"Wie viele Apps sind auf einem durchschnittlichen Handy installiert?",80,"Apps"],
+[4,"Wie viele Fotos liegen auf einem durchschnittlichen Smartphone?",2000,"Fotos"],
+[4,"Wie viele Kilometer Kabel stecken in einem Airbus A380?",500,"km"],
+[4,"Wie viele Millionen Einzelteile hat ein Airbus A380?",4,"Millionen"],
+[4,"Wie viele Schriftzeichen hat das chinesische Schriftsystem?",50000,"Zeichen"],
+[4,"Wie viele Bearbeitungen bekommt Wikipedia pro Minute?",350,"Bearbeitungen"],
+[4,"Wie viele Milliarden Websites gibt es weltweit?",1.1,"Milliarden"],
+[4,"Wie viele Milliarden Videos liegen auf YouTube?",14,"Milliarden"],
+[4,"Wie viele Streams braucht man auf Spotify für 1.000 Euro?",250000,"Streams"],
+[4,"Wie viele Songs erscheinen pro Tag neu auf Spotify?",100000,"Songs"],
+[4,"Wie viele Sekunden dauert ein durchschnittlicher Popsong?",200,"Sekunden"],
+[4,"Wie viele Musiker sitzen in einem großen Sinfonieorchester?",80,"Musiker"],
+[4,"Wie viele Millionen Farben kann das menschliche Auge unterscheiden?",10,"Millionen"],
+[4,"Wie viele Millionen Pixel hat ein 4K-Bild?",8.3,"Millionen"],
+[4,"Wie viele Gigabyte groß ist ein moderner AAA-Spiele-Download?",100,"Gigabyte"],
+[4,"Wie viele Länder nehmen am Eurovision Song Contest teil?",37,"Länder"],
+[4,"Wie viele Millionen Dollar spielte Avengers Endgame weltweit ein?",2800,"Mio. Dollar"],
+[4,"Wie viele Millionen Podcasts gibt es weltweit?",4,"Millionen"],
+[4,"Wie viele Museen gibt es in Deutschland?",6800,"Museen"],
+[4,"Wie viele Millionen Kinobesuche gibt es pro Jahr in Deutschland?",90,"Millionen"]
+];
+
+const COL=["#F0B429","#E2553C","#5FBF8B","#4EA8DE","#C77DFF","#F27B9D","#A3C940","#E8703A"];
+/* ================= Speicher =================
+   Reihenfolge: Artefakt-Storage → Gerätespeicher → nur im Arbeitsspeicher.
+   Jede Ebene ist gekapselt, ein Fehler bricht das Spiel nie ab. */
+const MEM={};
+const STORE={
+  async get(k){
+    try{
+      if(typeof window!=="undefined"&&window.storage){
+        const r=await window.storage.get(k); return r&&r.value?JSON.parse(r.value):null;
+      }
+      const v=localStorage.getItem("sd:"+k); return v?JSON.parse(v):null;
+    }catch(e){ return MEM[k]!==undefined?MEM[k]:null }
+  },
+  async set(k,v){
+    MEM[k]=v;
+    try{
+      if(typeof window!=="undefined"&&window.storage){
+        await window.storage.set(k,JSON.stringify(v)); return;
+      }
+      localStorage.setItem("sd:"+k,JSON.stringify(v));
+    }catch(e){}
+  },
+  async del(k){
+    delete MEM[k];
+    try{
+      if(typeof window!=="undefined"&&window.storage){ await window.storage.delete(k); return }
+      localStorage.removeItem("sd:"+k);
+    }catch(e){}
+  }
+};
+const K_SAVE="sd-laufendes-spiel", K_STATS="sd-uebung-bestwerte";
+let SAVE=null, STATS=null;
+
+function saveGame(){
+  SAVE={mode:S.mode,target:S.target,len:S.len,n:S.n,names:S.names,cats:S.cats,
+        players:S.players,pool:S.pool,qi:S.qi,turn:S.turn,guesses:S.guesses,results:S.results,
+        ts:Date.now()};
+  STORE.set(K_SAVE,SAVE);
+}
+function clearSave(){ SAVE=null; STORE.del(K_SAVE); }
+function resumeGame(){
+  if(!SAVE) return;
+  Object.assign(S,{mode:SAVE.mode,target:SAVE.target,len:SAVE.len,n:SAVE.n,
+    names:SAVE.names,cats:SAVE.cats,players:SAVE.players,pool:SAVE.pool,
+    qi:SAVE.qi,turn:SAVE.turn,guesses:SAVE.guesses,results:SAVE.results});
+  S.mode==="solo"?soloAsk():ask();
+}
+
+let S={mode:"duell",n:3,target:10,len:10,names:[],cats:[0,1,2,3,4],
+       players:[],pool:[],qi:0,turn:0,guesses:[],results:[],mask:true};
+
+const app=document.getElementById("app");
+const nf=n=>Number.isInteger(n)?n.toLocaleString("de-DE"):n.toLocaleString("de-DE",{maximumFractionDigits:3});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="#0D2B2F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+/* ---------- Bildmarke: zwei Tipps laufen auf die Wahrheit zu ---------- */
+function markSVG(){
+  return `<svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+    <defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#164349"/><stop offset="1" stop-color="#0B2427"/></linearGradient></defs>
+    <rect width="100" height="100" fill="url(#lg)"/>
+    <g stroke="#F3EADA" stroke-opacity=".14" stroke-width=".9">
+      <line x1="12" y1="79" x2="12" y2="84"/><line x1="24" y1="81" x2="24" y2="84"/>
+      <line x1="36" y1="81" x2="36" y2="84"/><line x1="48" y1="79" x2="48" y2="84"/>
+      <line x1="60" y1="81" x2="60" y2="84"/><line x1="72" y1="81" x2="72" y2="84"/>
+      <line x1="84" y1="79" x2="84" y2="84"/><line x1="10" y1="84" x2="90" y2="84"/>
+    </g>
+    <rect class="truthbar" x="48" y="17" width="4" height="50" rx="2" fill="#F0B429"/>
+    <path class="cvA" d="M23 32 L36 45 L23 58" fill="none" stroke="#F3EADA" stroke-width="7.2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="cvB" d="M82 29 L64 45 L82 61" fill="none" stroke="#F3EADA" stroke-opacity=".45"
+          stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+function lockup(small){
+  const ticks=Array.from({length:25},(_,i)=>{
+    const x=(i*(100/24)).toFixed(3);
+    return `<line x1="${x}%" y1="${i%6===0?0:5}" x2="${x}%" y2="11"/>`;
+  }).join("");
+  return `<div class="lock${small?" sm":""}">
+    ${markSVG()}
+    <div class="wm">Schätz<span class="d">duell</span></div>
+    <svg class="rule" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="0" y1="11" x2="100%" y2="11"/>${ticks}</svg>
+    <div class="tag">Nah dran reicht</div>
+  </div>`;
+}
+
+/* ================= Schritt 1: Spieler & Punkteziel ================= */
+function setup(){
+  const res = SAVE ? `<button class="resume" id="resume">
+      <span class="rt"><span class="r1">Angefangene Runde fortsetzen</span>
+      <span class="r2">${SAVE.mode==="solo"
+        ? `Übung · Frage ${(SAVE.results||[]).length+1} von ${Math.min(SAVE.len,SAVE.pool.length)}`
+        : `Duell · ${SAVE.players.length} Spieler · Frage ${SAVE.qi+1}`}</span></span>
+      <span class="arr">›</span></button>` : "";
+  app.innerHTML=`<div class="main fade">
+    ${lockup()}
+    ${res}
+    <div class="steps"><div class="step on"></div><div class="step"></div></div>
+    <p class="flabel">Modus</p>
+    <div class="seg" id="mode">
+      <button data-m="duell" aria-pressed="false">Duell<small>2–8 Spieler</small></button>
+      <button data-m="solo" aria-pressed="false">Übung<small>Allein</small></button>
+    </div>
+    <div id="cfg"></div>
+    <div class="spacer"></div>
+    <button id="go">Weiter zu den Kategorien</button>
+  </div>`;
+  if(SAVE) document.getElementById("resume").onclick=resumeGame;
+
+  const cfg=document.getElementById("cfg");
+
+  function drawDuell(){
+    cfg.innerHTML=`
+      <p class="flabel">Spielziel</p>
+      <div class="seg" id="seg">
+        <button data-t="5" aria-pressed="false">5 Punkte<small>Kurze Runde</small></button>
+        <button data-t="10" aria-pressed="false">10 Punkte<small>Volles Duell</small></button>
+      </div>
+      <p class="flabel">Spieler</p>
+      <div class="stepper">
+        <button class="ghost" id="minus" aria-label="Weniger Spieler">−</button>
+        <div class="cnt"><b id="cnt">${S.n}</b><span>Spieler</span></div>
+        <button class="ghost" id="plus" aria-label="Mehr Spieler">+</button>
+      </div>
+      <div class="names" id="names"></div>`;
+    const segPaint=()=>document.querySelectorAll("#seg button").forEach(b=>
+      b.setAttribute("aria-pressed",+b.dataset.t===S.target));
+    document.querySelectorAll("#seg button").forEach(b=>b.onclick=()=>{S.target=+b.dataset.t;segPaint()});
+    segPaint();
+    const names=()=>{
+      document.getElementById("cnt").textContent=S.n;
+      document.getElementById("names").innerHTML=Array.from({length:S.n},(_,i)=>`
+        <div class="nrow"><div class="chip" style="background:${COL[i]}">${i+1}</div>
+        <input type="text" id="n${i}" maxlength="12" autocomplete="off"
+          placeholder="Name" value="${esc(S.names[i]||"")}"></div>`).join("");
+      for(let i=0;i<S.n;i++){
+        const el=document.getElementById("n"+i);
+        el.addEventListener("input",()=>S.names[i]=el.value);
+        el.addEventListener("keydown",e=>{if(e.key==="Enter"){
+          const nx=document.getElementById("n"+(i+1)); nx?nx.focus():el.blur()}});
+      }
+    };
+    names();
+    document.getElementById("minus").onclick=()=>{if(S.n>2){S.n--;names()}};
+    document.getElementById("plus").onclick=()=>{if(S.n<8){S.n++;names()}};
+  }
+
+  function drawSolo(){
+    const b=STATS&&STATS["best"+S.len];
+    cfg.innerHTML=`
+      <p class="flabel">Rundenlänge</p>
+      <div class="seg" id="seg">
+        <button data-l="10" aria-pressed="false">10 Fragen<small>Schnelldurchlauf</small></button>
+        <button data-l="25" aria-pressed="false">25 Fragen<small>Langes Training</small></button>
+      </div>
+      <div class="best" id="best"></div>
+      <div class="sub">Du tippst allein gegen die Wahrheit. Pro Frage gibt es bis zu
+        100 Punkte, je nachdem wie nah du dran liegst. Am Ende bekommst du deine
+        Trefferquote.</div>`;
+    const paintBest=()=>{
+      const v=STATS&&STATS["best"+S.len];
+      const r=STATS&&STATS.runden;
+      document.getElementById("best").textContent = v
+        ? `Bestwert ${S.len} Fragen: ${v} %${r?`  ·  ${r} Runden gespielt`:""}`
+        : "Noch kein Bestwert für diese Länge";
+    };
+    const segPaint=()=>{
+      document.querySelectorAll("#seg button").forEach(b=>
+        b.setAttribute("aria-pressed",+b.dataset.l===S.len));
+      paintBest();
+    };
+    document.querySelectorAll("#seg button").forEach(b=>b.onclick=()=>{S.len=+b.dataset.l;segPaint()});
+    segPaint();
+  }
+
+  const modePaint=()=>{
+    document.querySelectorAll("#mode button").forEach(b=>
+      b.setAttribute("aria-pressed",b.dataset.m===S.mode));
+    S.mode==="duell"?drawDuell():drawSolo();
+  };
+  document.querySelectorAll("#mode button").forEach(b=>b.onclick=()=>{S.mode=b.dataset.m;modePaint()});
+  modePaint();
+
+  document.getElementById("go").onclick=()=>{
+    if(S.mode==="duell")
+      S.names=Array.from({length:S.n},(_,i)=>(S.names[i]||"").trim()||`Spieler ${i+1}`);
+    pickCats();
+  };
+}
+
+/* ================= Schritt 2: Kategorien ================= */
+function pickCats(){
+  const count=i=>Q.filter(q=>q[0]===i).length;
+  app.innerHTML=`<div class="main fade">
+    ${lockup(true)}
+    <div class="steps"><div class="step on"></div><div class="step on"></div></div>
+    <h2>Kategorien</h2>
+    <div class="sub">Mehrfachauswahl möglich · ${S.mode==="duell"?`Ziel: ${S.target} Punkte`:`Übung: ${S.len} Fragen`}</div>
+    <div class="cats">
+      ${CATS.map((c,i)=>`<button class="cat" data-i="${i}" aria-pressed="false">
+        <span class="box">${CHECK}</span>
+        <span class="txt"><span class="t1">${esc(c.k)}</span><span class="t2">${esc(c.d)}</span></span>
+        <span class="n">${count(i)}</span></button>`).join("")}
+      <button class="allbtn" id="all">Alle Kategorien</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="hint" id="tally"></div>
+    <button id="start" style="margin-top:10px">Spiel starten</button>
+    <button class="link" id="back">Zurück</button>
+  </div>`;
+  const paint=()=>{
+    document.querySelectorAll(".cat").forEach(b=>
+      b.setAttribute("aria-pressed",S.cats.includes(+b.dataset.i)));
+    document.getElementById("all").classList.toggle("on",S.cats.length===CATS.length);
+    const n=Q.filter(q=>S.cats.includes(q[0])).length;
+    document.getElementById("tally").textContent=S.cats.length?`${n} Fragen im Topf`:"Mindestens eine Kategorie wählen";
+    document.getElementById("start").disabled=!S.cats.length;
+  };
+  document.querySelectorAll(".cat").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    S.cats=S.cats.includes(i)?S.cats.filter(x=>x!==i):[...S.cats,i];
+    paint();
+  });
+  document.getElementById("all").onclick=()=>{
+    S.cats=S.cats.length===CATS.length?[]:CATS.map((_,i)=>i); paint();
+  };
+  document.getElementById("back").onclick=setup;
+  document.getElementById("start").onclick=start;
+  paint();
+}
+
+function start(){
+  S.pool=shuffle(Q.map((_,i)=>i).filter(i=>S.cats.includes(Q[i][0])));
+  S.qi=0;S.turn=0;S.guesses=[];S.results=[];
+  if(S.mode==="solo") return soloAsk();
+  S.players=S.names.map(n=>({name:n,score:0}));
+  ask();
+}
+
+/* ================= Übungsmodus ================= */
+function accuracy(g,a){
+  let p;
+  if(a>0&&g>0){
+    const r=Math.max(g/a,a/g);
+    p=100*(1-Math.log10(r)/1.3);
+  }else{
+    p=100*(1-Math.abs(g-a)/Math.max(Math.abs(a),1));
+  }
+  return Math.max(0,Math.min(100,Math.round(p)));
+}
+function bandOf(p){
+  if(p>=95) return ["Volltreffer","#5FBF8B"];
+  if(p>=80) return ["Stark","#A3C940"];
+  if(p>=60) return ["Solide","#F0B429"];
+  if(p>=35) return ["Naja","#E8703A"];
+  return ["Daneben","#E2553C"];
+}
+function soloLen(){return Math.min(S.len,S.pool.length)}
+function soloHead(){
+  const done=S.results.length, len=soloLen();
+  const pts=S.results.reduce((a,r)=>a+r.p,0);
+  return `<div class="solohead">
+    <span class="sc">${done} / ${len}</span>
+    <span class="prog"><i style="width:${done/len*100}%"></i></span>
+    <span class="sc">${pts} Pkt</span></div>`;
+}
+
+function soloAsk(){
+  saveGame();
+  const [c,text,,unit]=Q[S.pool[S.qi]];
+  app.innerHTML=`${soloHead()}
+  <div class="main fade">
+    <div class="qmeta"><div class="eyebrow">Übung</div>
+      <div class="eyebrow" style="text-align:right">${esc(CATS[c].k)}</div></div>
+    <div class="question">${esc(text)}</div>
+    <div class="unit">Antwort in ${esc(unit)}</div>
+    <input type="text" id="g" class="guess" inputmode="decimal" autocomplete="off"
+      placeholder="?" style="margin-top:26px">
+    <div class="spacer"></div>
+    <button id="ok" disabled>Auflösen</button>
+    <div class="links" style="margin-top:4px">
+      <button class="link" id="skip">Frage überspringen</button>
+      <span class="sep">·</span>
+      <button class="link" id="stop">Übung beenden</button>
+    </div>
+  </div>`;
+  const g=document.getElementById("g"), ok=document.getElementById("ok");
+  const val=()=>parseFloat(g.value.replace(/\./g,"").replace(",","."));
+  g.addEventListener("input",()=>{g.value=g.value.replace(/[^0-9.,-]/g,"");ok.disabled=!isFinite(val())});
+  g.addEventListener("keydown",e=>{if(e.key==="Enter"&&!ok.disabled)ok.click()});
+  ok.onclick=()=>soloReveal(val());
+  document.getElementById("skip").onclick=()=>{
+    S.qi++;
+    if(S.qi>=S.pool.length) return S.results.length?soloEnd():setup();
+    soloAsk();
+  };
+  document.getElementById("stop").onclick=()=>S.results.length?soloEnd():(clearSave(),setup());
+  g.focus();
+}
+
+function soloReveal(guess){
+  const [c,text,ans,unit]=Q[S.pool[S.qi]];
+  const p=accuracy(guess,ans);
+  const [band,col]=bandOf(p);
+  S.results.push({q:text,guess,ans,unit,p});
+  const off=ans!==0?Math.round((guess-ans)/Math.abs(ans)*100):0;
+
+  app.innerHTML=`${soloHead()}
+  <div class="main fade">
+    <div class="qmeta"><div class="eyebrow">Übung</div>
+      <div class="eyebrow" style="text-align:right">${esc(CATS[c].k)}</div></div>
+    <div style="font-size:14.5px;color:var(--dim);margin-bottom:10px">${esc(text)}</div>
+    <div class="truth"><div class="eyebrow">Richtige Antwort</div>
+      <div class="val">${nf(ans)}</div><div class="u">${esc(unit)}</div></div>
+    <div class="cmp">
+      <div><div class="k">Dein Tipp</div><div class="v">${nf(guess)}</div></div>
+      <div><div class="k">Abweichung</div><div class="v">${off>0?"+":""}${nf(off)} %</div></div>
+    </div>
+    <div class="score">
+      <div class="big" style="color:${col}">+${p}</div>
+      <div class="band" style="color:${col}">${band}</div>
+    </div>
+    <div class="spacer"></div>
+    <button id="next">${S.results.length>=soloLen()?"Auswertung":"Nächste Frage"}</button>
+  </div>`;
+  document.getElementById("next").onclick=()=>{
+    if(S.results.length>=soloLen()) return soloEnd();
+    S.qi++; soloAsk();
+  };
+}
+
+function soloEnd(){
+  clearSave();
+  const n=S.results.length;
+  const pts=S.results.reduce((a,r)=>a+r.p,0);
+  const pct=Math.round(pts/(n*100)*100);
+  const hits=S.results.filter(r=>r.p>=95).length;
+  const best=S.results.reduce((a,r)=>r.p>a.p?r:a);
+  const worst=S.results.reduce((a,r)=>r.p<a.p?r:a);
+  const title = pct>=90?"Schätz-Legende" : pct>=75?"Feines Gespür"
+              : pct>=60?"Solide Nase"    : pct>=40?"Ausbaufähig" : "Glückssache";
+
+  STATS=STATS||{runden:0,fragen:0};
+  STATS.runden=(STATS.runden||0)+1;
+  STATS.fragen=(STATS.fragen||0)+n;
+  const key="best"+S.len, prev=STATS[key]||0, rekord = n===S.len && pct>prev;
+  if(rekord) STATS[key]=pct;
+  STORE.set(K_STATS,STATS);
+
+  app.innerHTML=`<div class="main fade">
+    <div class="champ" style="padding:18px 0 4px">
+      <div class="eyebrow">${rekord?"Neuer Bestwert":"Trefferquote"}</div>
+      <div class="name" style="color:var(--amber)">${pct} %</div>
+      <div class="final" style="margin-top:12px">${esc(title)}${
+        !rekord&&prev?`<br><span style="opacity:.7">Bestwert ${S.len} Fragen: ${prev} %</span>`:""}</div>
+    </div>
+    <div class="statgrid">
+      <div><div class="k">Punkte</div><div class="v">${pts}</div></div>
+      <div><div class="k">von</div><div class="v">${n*100}</div></div>
+      <div><div class="k">Volltreffer</div><div class="v">${hits}</div></div>
+      <div><div class="k">Fragen</div><div class="v">${n}</div></div>
+    </div>
+    <div class="rows" style="margin-top:20px">
+      <div class="row"><span class="dot" style="background:#5FBF8B"></span>
+        <span class="who" style="font-family:var(--body);font-weight:600;text-transform:none;font-size:13px">${esc(best.q)}</span>
+        <span class="gv" style="color:#5FBF8B">${best.p}</span></div>
+      <div class="row"><span class="dot" style="background:#E2553C"></span>
+        <span class="who" style="font-family:var(--body);font-weight:600;text-transform:none;font-size:13px">${esc(worst.q)}</span>
+        <span class="gv" style="color:#E2553C">${worst.p}</span></div>
+    </div>
+    <div class="spacer"></div>
+    <button id="again">Neue Übungsrunde</button>
+    <button class="ghost" id="home" style="margin-top:10px">Zurück zum Start</button>
+  </div>`;
+  document.getElementById("again").onclick=start;
+  document.getElementById("home").onclick=setup;
+}
+
+function board(){
+  const p=S.players.length;
+  const cols=p<=3?p:(p<=4?2:(p<=6?3:4));
+  return `<div class="board" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">
+    ${S.players.map((pl,i)=>`<div class="slot">
+      <div class="nm" style="color:${COL[i]}"><i>${esc(pl.name)}</i><em style="font-style:normal">${pl.score}</em></div>
+      <div class="bar"><i style="width:${Math.min(100,pl.score/S.target*100)}%;background:${COL[i]}"></i></div>
+    </div>`).join("")}</div>`;
+}
+
+function ask(){
+  saveGame();
+  const [c,text,,unit]=Q[S.pool[S.qi]];
+  const p=S.players[S.turn], last=S.turn===S.players.length-1;
+  app.innerHTML=`${board()}
+  <div class="main fade">
+    <div class="qmeta"><div class="eyebrow">Frage ${S.qi+1} · bis ${S.target}</div>
+      <div class="eyebrow" style="text-align:right">${esc(CATS[c].k)}</div></div>
+    <div class="question">${esc(text)}</div>
+    <div class="unit">Antwort in ${esc(unit)}</div>
+    <div class="turn"><span class="dot" style="background:${COL[S.turn]}"></span>
+      <b style="color:${COL[S.turn]}">${esc(p.name)}</b>
+      <span class="of">${S.turn+1} / ${S.players.length}</span></div>
+    <input type="text" id="g" class="guess ${S.mask?"mask":""}" inputmode="decimal" autocomplete="off" placeholder="?">
+    <div class="links">
+      <button class="link" id="tog">${S.mask?"Zahl anzeigen":"Zahl verdecken"}</button>
+      ${S.turn===0?`<span class="sep">·</span><button class="link" id="skip">Frage überspringen</button>`:""}
+    </div>
+    <div class="spacer"></div>
+    <button id="ok" disabled>${last?"Abgeben & auflösen":"Abgeben & weitergeben"}</button>
+    <div class="hint">${last?"Danach werden alle Tipps aufgedeckt":"Handy weitergeben an "+esc(S.players[S.turn+1].name)}</div>
+  </div>`;
+  const g=document.getElementById("g"), ok=document.getElementById("ok");
+  const val=()=>parseFloat(g.value.replace(/\./g,"").replace(",","."));
+  g.addEventListener("input",()=>{g.value=g.value.replace(/[^0-9.,-]/g,"");ok.disabled=!isFinite(val())});
+  g.addEventListener("keydown",e=>{if(e.key==="Enter"&&!ok.disabled)ok.click()});
+  document.getElementById("tog").onclick=()=>{S.mask=!S.mask;g.classList.toggle("mask",S.mask);
+    document.getElementById("tog").textContent=S.mask?"Zahl anzeigen":"Zahl verdecken";g.focus()};
+  const sk=document.getElementById("skip");
+  if(sk) sk.onclick=()=>{
+    S.qi++; S.guesses=[];
+    if(S.qi>=S.pool.length) return win();
+    ask();
+  };
+  ok.onclick=()=>{
+    S.guesses.push(val());
+    if(!last){S.turn++;ask()} else {S.turn=0;reveal()}
+  };
+  g.focus();
+}
+
+function reveal(){
+  const [c,text,ans,unit]=Q[S.pool[S.qi]];
+  const diffs=S.guesses.map(v=>Math.abs(v-ans));
+  const best=Math.min(...diffs);
+  diffs.forEach((d,i)=>{if(d===best)S.players[i].score++});
+
+  const all=[ans,...S.guesses];
+  let lo=Math.min(...all), hi=Math.max(...all);
+  if(hi===lo){lo-=1;hi+=1}
+  const pad=(hi-lo)*.1; lo-=pad; hi+=pad;
+  const pos=v=>((v-lo)/(hi-lo))*100;
+  const lanes=[0,20,40];
+  const order=S.guesses.map((v,i)=>({i,v,d:diffs[i]})).sort((a,b)=>a.d-b.d);
+
+  app.innerHTML=`${board()}
+  <div class="main fade">
+    <div class="qmeta"><div class="eyebrow">Frage ${S.qi+1} · bis ${S.target}</div>
+      <div class="eyebrow" style="text-align:right">${esc(CATS[c].k)}</div></div>
+    <div style="font-size:14.5px;color:var(--dim);margin-bottom:10px">${esc(text)}</div>
+    <div class="truth"><div class="eyebrow">Richtige Antwort</div>
+      <div class="val">${nf(ans)}</div><div class="u">${esc(unit)}</div></div>
+    <div class="strahl">
+      <div class="axis"></div><div class="tick" style="left:${pos(ans)}%"></div>
+      ${S.guesses.map((v,i)=>{const lane=lanes[i%3];
+        return `<div class="peg" style="left:${pos(v)}%;top:${15+lane}px;color:${COL[i]}">
+          <div class="stem" style="height:${lane?7:4}px"></div>
+          <div class="bub">${esc(S.players[i].name.slice(0,3).toUpperCase())}</div></div>`}).join("")}
+    </div>
+    <div class="rows">
+      ${order.map(o=>`<div class="row ${o.d===best?"win":""}">
+        <span class="dot" style="background:${COL[o.i]}"></span>
+        <span class="who" style="color:${COL[o.i]}">${esc(S.players[o.i].name)}</span>
+        <span class="gv">${nf(o.v)}</span>
+        <span class="diff">${o.d===0?"exakt":"±"+nf(Math.round(o.d*1000)/1000)}</span>
+        <span class="pt" style="color:${COL[o.i]}">+1</span></div>`).join("")}
+    </div>
+    <div class="spacer"></div>
+    <button id="next">Weiter</button>
+  </div>`;
+  document.getElementById("next").onclick=()=>{
+    if(S.players.some(p=>p.score>=S.target)) return win();
+    S.qi++; S.guesses=[];
+    if(S.qi>=S.pool.length) return win();
+    ask();
+  };
+}
+
+function win(){
+  clearSave();
+  const top=Math.max(...S.players.map(p=>p.score));
+  const champs=S.players.map((p,i)=>({p,i})).filter(o=>o.p.score===top);
+  const rank=S.players.map((p,i)=>({p,i})).sort((a,b)=>b.p.score-a.p.score);
+  app.innerHTML=`${board()}
+  <div class="main fade">
+    <div class="champ">
+      <div class="eyebrow">${champs.length>1?"Unentschieden":"Sieger"}</div>
+      <div class="name" style="color:${champs.length>1?"var(--cream)":COL[champs[0].i]}">
+        ${champs.map(o=>esc(o.p.name)).join("<br>")}</div>
+      <div class="final">${rank.map(o=>`<span style="color:${COL[o.i]}">${esc(o.p.name)}</span> — ${o.p.score}`).join("<br>")}</div>
+    </div>
+    <div class="spacer"></div>
+    <button id="same">Nochmal, gleiche Runde</button>
+    <button class="ghost" id="again" style="margin-top:10px">Neu einrichten</button>
+  </div>`;
+  document.getElementById("again").onclick=setup;
+  document.getElementById("same").onclick=start;
+}
+
+async function boot(){
+  try{
+    const [sv,st]=await Promise.all([STORE.get(K_SAVE),STORE.get(K_STATS)]);
+    SAVE = (sv && sv.pool && sv.pool.length) ? sv : null;
+    STATS = st || null;
+    if(SAVE){
+      S.mode=SAVE.mode; S.target=SAVE.target; S.len=SAVE.len;
+      S.n=SAVE.n; S.names=SAVE.names||[]; S.cats=SAVE.cats||[0,1,2,3,4];
+    }
+  }catch(e){}
+  setup();
+}
+boot();
+</script>
+</body>
+</html>
