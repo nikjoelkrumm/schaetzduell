@@ -1,0 +1,61 @@
+:root {
+  /* Brand palette — from the Schätzduell design system (Petrol/Amber/Creme) */
+  --petrol-950: #0b2427;
+  --petrol-900: #0d2b2f;
+  --petrol-800: #12393e;
+  --petrol-700: #164349;
+  --petrol-600: #1b4c52;
+
+  --amber: #f0b429;
+  --amber-dark: #d89a12;
+
+  --cream: #f3eada;
+  --cream-04: rgba(243, 234, 218, 0.04);
+  --cream-06: rgba(243, 234, 218, 0.06);
+  --cream-08: rgba(243, 234, 218, 0.08);
+  --cream-10: rgba(243, 234, 218, 0.1);
+  --cream-12: rgba(243, 234, 218, 0.12);
+  --cream-14: rgba(243, 234, 218, 0.14);
+  --cream-16: rgba(243, 234, 218, 0.16);
+  --cream-18: rgba(243, 234, 218, 0.18);
+  --cream-22: rgba(243, 234, 218, 0.22);
+  --cream-25: rgba(243, 234, 218, 0.25);
+  --cream-30: rgba(243, 234, 218, 0.3);
+  --cream-35: rgba(243, 234, 218, 0.35);
+  --cream-38: rgba(243, 234, 218, 0.38);
+  --cream-40: rgba(243, 234, 218, 0.4);
+  --cream-45: rgba(243, 234, 218, 0.45);
+  --cream-50: rgba(243, 234, 218, 0.5);
+  --cream-55: rgba(243, 234, 218, 0.55);
+  --cream-58: rgba(243, 234, 218, 0.58);
+  --cream-60: rgba(243, 234, 218, 0.6);
+  --cream-62: rgba(243, 234, 218, 0.62);
+  --cream-65: rgba(243, 234, 218, 0.65);
+  --cream-70: rgba(243, 234, 218, 0.7);
+  --cream-75: rgba(243, 234, 218, 0.75);
+  --cream-85: rgba(243, 234, 218, 0.85);
+
+  --amber-09: rgba(240, 180, 41, 0.09);
+  --amber-10: rgba(240, 180, 41, 0.1);
+  --amber-12: rgba(240, 180, 41, 0.12);
+  --amber-18: rgba(240, 180, 41, 0.18);
+  --amber-22: rgba(240, 180, 41, 0.22);
+  --amber-30: rgba(240, 180, 41, 0.3);
+  --amber-40: rgba(240, 180, 41, 0.4);
+  --amber-45: rgba(240, 180, 41, 0.45);
+
+  --danger: #e2553c;
+  --good: #5fbf8b;
+
+  --font-body: Archivo, "Helvetica Neue", system-ui, sans-serif;
+  --font-display: "Archivo Black", Archivo, "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 14px;
+  --r-xl: 16px;
+  --r-2xl: 20px;
+
+  --shell-max: 480px;
+}

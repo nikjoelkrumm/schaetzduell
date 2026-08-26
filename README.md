@@ -1,3 +1,22 @@
+# Schätzduell
+
+The design in `project/Schätzduell App.dc.html` has been implemented for
+real:
+
+- **`app/`** — the React + TypeScript frontend (Vite). 13 screens, real
+  Supabase auth/data, offline queueing, Realtime duel updates. `cd app && npm
+  install && npm run dev`.
+- **`supabase/`** — the Postgres schema, RLS policies, RPCs, and question
+  seed data. See **`SUPABASE_SETUP.md`** to stand up a project and wire it
+  to `app/`.
+- **`ARCHITECTURE.md`** — what's real, what's a documented simplification,
+  and why, mapped back to the design's own "Backend-Blatt".
+
+The rest of this file is the original Claude Design handoff bundle's README,
+kept as-is below for context on where the design came from.
+
+---
+
 # CODING AGENTS: READ THIS FIRST
 
 This is a **handoff bundle** from Claude Design (claude.ai/design).
