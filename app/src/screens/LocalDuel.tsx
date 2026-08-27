@@ -5,6 +5,7 @@ import { Confetti } from "../components/Confetti";
 import { CATEGORIES } from "../data/categories";
 import { QUESTIONS, type LocalQuestion } from "../data/questions";
 import { parseGuess, nf } from "../lib/scoring";
+import { CountUpNumber } from "../components/CountUpNumber";
 
 // Same jersey-color idea as the original schaetzduell-verbessert.html build's
 // `COL` array — one color per player, reused for their peg on the reveal
@@ -413,7 +414,7 @@ export default function LocalDuel() {
               <div style={{ font: "700 12px/1 'DM Mono',monospace", color: "rgba(243,234,218,.4)", width: 16 }}>{pos + 1}</div>
               <div style={{ width: 10, height: 10, borderRadius: "50%", background: PLAYER_COLORS[o.i], flex: "none" }} />
               <div style={{ flex: 1, font: "700 14px/1 Archivo", color: PLAYER_COLORS[o.i] }}>{o.p.name}</div>
-              <div style={{ font: "900 16px/1 'Archivo Black',Archivo" }}>{o.p.score}</div>
+              <div className="sd-pop" style={{ font: "900 16px/1 'Archivo Black',Archivo" }}><CountUpNumber value={o.p.score} /></div>
             </div>
           ))}
         </div>

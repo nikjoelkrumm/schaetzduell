@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../state/AuthContext";
 import { getProfileBadges, exportMyData, deleteMyAccount } from "../lib/db";
 import { initialsOf } from "../components/ui";
 import { AvatarView } from "../components/AvatarView";
+import { CountUpNumber } from "../components/CountUpNumber";
 import { FlameIcon, CrownIcon, TargetIcon, MedalIcon, DuelIcon, MoonIcon, DiamondIcon, CompassIcon } from "../components/icons";
 
 const BADGE_DEFS = [
@@ -35,10 +36,23 @@ export default function Profile() {
   const xpNext = profile.level * 300;
   const xpPct = Math.max(0, Math.min(100, Math.round(((profile.xp - xpFloor) / (xpNext - xpFloor)) * 100)));
 
-  const stats = [
-    { k: "XP gesamt", v: profile.xp },
+  const stats: { k: string; v: ReactNode }[] = [
+    { k: "XP gesamt", v: <CountUpNumber value={profile.xp} /> },
     { k: "Level", v: profile.level },
-    { k: "Wochen Serie", v: profile.streak },
+    {
+      k: "Wochen Serie",
+      v:
+        profile.streak > 0 ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <span className="sd-flicker" style={{ display: "inline-flex" }}>
+              <FlameIcon color="#F0B429" size={18} />
+            </span>
+            <CountUpNumber value={profile.streak} />
+          </span>
+        ) : (
+          0
+        ),
+    },
     { k: "Abzeichen", v: `${earned.size} / ${BADGE_DEFS.length}` },
   ];
 
@@ -97,7 +111,15 @@ export default function Profile() {
           <div style={{ font: "400 11px/1 'DM Mono',monospace", color: "rgba(243,234,218,.5)" }}>{profile.xp} / {xpNext} XP</div>
         </div>
         <div style={{ height: 8, borderRadius: 4, background: "rgba(243,234,218,.14)", marginTop: 12, overflow: "hidden" }}>
-          <div className="sd-bar-fill" style={{ height: 8, borderRadius: 4, background: "#F0B429", width: `${xpPct}%` }} />
+          <div className="sd-bar-fill" style={{ height: 8, borderRadius: 4, background: "#F0B429", width: `${xpPct}%`, position: "relative", overflow: "hidden" }}>
+            <div
+              style={{
+                position: "absolute", inset: 0, width: "40%",
+                background: "linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent)",
+                animation: "sd-shimmer 2.4s ease-in-out infinite",
+              }}
+            />
+          </div>
         </div>
       </div>
 

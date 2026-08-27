@@ -6,6 +6,8 @@ import type { WeekPayload } from "../lib/types";
 import { formatCountdown } from "../lib/format";
 import { Card, StatTile, ProgressDots, initialsOf } from "../components/ui";
 import { AvatarView } from "../components/AvatarView";
+import { FlameIcon } from "../components/icons";
+import { CountUpNumber } from "../components/CountUpNumber";
 
 const TIER_LABEL: Record<string, string> = {
   bronze: "BRONZE",
@@ -103,6 +105,13 @@ export default function Home() {
           overflow: "hidden",
         }}
       >
+        <div
+          style={{
+            position: "absolute", right: -30, top: -30, width: 150, height: 150, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(240,180,41,.28), transparent 70%)",
+            animation: "sd-glow-pulse 4.5s ease-in-out infinite",
+          }}
+        />
         <div style={{ position: "absolute", right: -30, top: -30, width: 150, height: 150, borderRadius: "50%", border: "1px solid rgba(240,180,41,.18)" }} />
         <div style={{ font: "400 10px/1 'DM Mono',monospace", letterSpacing: ".16em", textTransform: "uppercase", color: "#F0B429", marginBottom: 12 }}>
           Wochenchallenge
@@ -135,7 +144,21 @@ export default function Home() {
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 22 }}>
-        <StatTile value={profile.streak} label="Wochen Serie" />
+        <StatTile
+          value={
+            profile.streak > 0 ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                <span className="sd-flicker" style={{ display: "inline-flex" }}>
+                  <FlameIcon color="#F0B429" size={20} />
+                </span>
+                <CountUpNumber value={profile.streak} />
+              </span>
+            ) : (
+              0
+            )
+          }
+          label="Wochen Serie"
+        />
         <StatTile value={avg !== null ? <>{avg}<span style={{ fontSize: 14 }}> %</span></> : "—"} label="Trefferquote" />
         <StatTile value={league ? `#${league.myRank}` : "—"} label="in der Liga" />
       </div>

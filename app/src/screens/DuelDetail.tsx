@@ -5,6 +5,7 @@ import type { DuelDetail as DuelDetailT } from "../lib/types";
 import { nf } from "../lib/scoring";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../state/AuthContext";
+import { CountUpNumber } from "../components/CountUpNumber";
 
 export default function DuelDetail() {
   const { duelId } = useParams<{ duelId: string }>();
@@ -97,12 +98,12 @@ export default function DuelDetail() {
       <div style={{ display: "flex", alignItems: "flex-end", gap: 14, marginBottom: 26 }}>
         <div style={{ flex: 1 }}>
           <div style={{ font: "700 13px/1 Archivo", color: "rgba(243,234,218,.6)" }}>Du</div>
-          <div style={{ font: "900 46px/1 'Archivo Black',Archivo", color: "#F0B429", marginTop: 6 }}>{myTotal}</div>
+          <div style={{ font: "900 46px/1 'Archivo Black',Archivo", color: "#F0B429", marginTop: 6 }}><CountUpNumber value={myTotal} /></div>
         </div>
         <div style={{ font: "900 16px/1 'Archivo Black',Archivo", color: "rgba(243,234,218,.3)", paddingBottom: 12 }}>:</div>
         <div style={{ flex: 1, textAlign: "right" }}>
           <div style={{ font: "700 13px/1 Archivo", color: "rgba(243,234,218,.6)" }}>{duel.opponent_name}</div>
-          <div style={{ font: "900 46px/1 'Archivo Black',Archivo", marginTop: 6 }}>{oppTotal}</div>
+          <div style={{ font: "900 46px/1 'Archivo Black',Archivo", marginTop: 6 }}><CountUpNumber value={oppTotal} /></div>
         </div>
       </div>
 

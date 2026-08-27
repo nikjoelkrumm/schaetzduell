@@ -42,18 +42,27 @@ export default function Onboarding() {
       }}
     >
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 0" }}>
-        <img
-          src="/appicon.svg"
-          alt=""
-          width={76}
-          height={76}
-          style={{
-            borderRadius: 20,
-            boxShadow: "0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(243,234,218,.14)",
-            marginBottom: 30,
-            display: "block",
-          }}
-        />
+        <div style={{ position: "relative", width: 76, marginBottom: 30 }}>
+          <div
+            style={{
+              position: "absolute", inset: -16, borderRadius: 30,
+              background: "radial-gradient(circle, rgba(240,180,41,.35), transparent 70%)",
+              animation: "sd-glow-pulse 3.6s ease-in-out infinite",
+            }}
+          />
+          <img
+            src="/appicon.svg"
+            alt=""
+            width={76}
+            height={76}
+            style={{
+              position: "relative",
+              borderRadius: 20,
+              boxShadow: "0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(243,234,218,.14)",
+              display: "block",
+            }}
+          />
+        </div>
         <div style={{ font: "900 42px/.94 'Archivo Black',Archivo", letterSpacing: "-.035em", marginBottom: 16 }}>
           Wie gut
           <br />

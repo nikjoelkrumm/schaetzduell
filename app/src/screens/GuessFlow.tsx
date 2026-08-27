@@ -7,6 +7,7 @@ import { parseGuess, nf, sliderToVal, valToSlider, scalePosPct, band } from "../
 import { enqueue, makeIdemKey, readQueue, removeFromQueue } from "../lib/offlineQueue";
 import { supabase } from "../lib/supabase";
 import { categoryColorByName } from "../data/categories";
+import { ScoreRing } from "../components/ScoreRing";
 
 type Mode = "week" | "practice" | "duel";
 
@@ -325,12 +326,7 @@ export default function GuessFlow({ mode }: { mode: Mode }) {
         </div>
         <div style={{ font: "600 15px/1.35 Archivo", color: "rgba(243,234,218,.7)", marginBottom: 30 }}>{question.text}</div>
 
-        <div style={{ textAlign: "center" }}>
-          <div key={reveal.score} className="sd-pop" style={{ font: "900 66px/1 'Archivo Black',Archivo", letterSpacing: "-.04em", color: b.tint }}>+{reveal.score}</div>
-          <div style={{ font: "900 13px/1 'Archivo Black',Archivo", letterSpacing: ".1em", textTransform: "uppercase", color: b.tint, marginTop: 12 }}>
-            {b.label}
-          </div>
-        </div>
+        <ScoreRing score={reveal.score} tint={b.tint} band={b.label} />
 
         <div style={{ margin: "36px 0 8px", position: "relative", height: 76 }}>
           <div style={{ position: "absolute", left: 0, right: 0, top: 38, height: 2, background: "rgba(243,234,218,.18)" }} />
