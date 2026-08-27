@@ -136,13 +136,13 @@ export default function DuelDetail() {
             <>
               <div style={{ display: "flex", gap: 8, marginTop: 9, alignItems: "center" }}>
                 <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(243,234,218,.12)", overflow: "hidden" }}>
-                  <div style={{ height: 6, borderRadius: 3, background: "#F0B429", width: `${r.my_score ?? 0}%` }} />
+                  <div className="sd-bar-fill" style={{ height: 6, borderRadius: 3, background: "#F0B429", width: `${r.my_score ?? 0}%` }} />
                 </div>
                 <div style={{ font: "500 11px/1 'DM Mono',monospace", color: "#F0B429", width: 34, textAlign: "right" }}>{r.my_score}</div>
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 5, alignItems: "center" }}>
                 <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(243,234,218,.12)", overflow: "hidden" }}>
-                  <div style={{ height: 6, borderRadius: 3, background: "rgba(243,234,218,.6)", width: `${r.opp_score ?? 0}%` }} />
+                  <div className="sd-bar-fill" style={{ height: 6, borderRadius: 3, background: "rgba(243,234,218,.6)", width: `${r.opp_score ?? 0}%` }} />
                 </div>
                 <div style={{ font: "500 11px/1 'DM Mono',monospace", color: "rgba(243,234,218,.6)", width: 34, textAlign: "right" }}>{r.opp_score}</div>
               </div>
@@ -156,6 +156,7 @@ export default function DuelDetail() {
       {duel.status === "finished" ? (
         <div
           onClick={rematch}
+          className="sd-tap"
           style={{ background: "#F0B429", color: "#0D2B2F", borderRadius: 14, height: 56, display: "flex", alignItems: "center", justifyContent: "center", font: "800 15.5px/1 Archivo", cursor: busy ? "default" : "pointer", marginTop: 22, opacity: busy ? 0.6 : 1 }}
         >
           Revanche fordern
@@ -163,6 +164,7 @@ export default function DuelDetail() {
       ) : nextOpenRound ? (
         <div
           onClick={() => navigate(`/duelle/${duel.id}/runde/${nextOpenRound.round_id}`)}
+          className="sd-tap"
           style={{ background: "#F0B429", color: "#0D2B2F", borderRadius: 14, height: 56, display: "flex", alignItems: "center", justifyContent: "center", font: "800 15.5px/1 Archivo", cursor: "pointer", marginTop: 22 }}
         >
           Runde {nextOpenRound.n} spielen

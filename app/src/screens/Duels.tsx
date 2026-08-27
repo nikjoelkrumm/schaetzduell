@@ -128,16 +128,40 @@ export default function Duels() {
       <div style={{ display: "flex", gap: 10, marginBottom: picking ? 12 : 20 }}>
         <div
           onClick={startMatchmaking}
+          className="sd-tap"
           style={{ flex: 1, background: "#F0B429", color: "#0D2B2F", borderRadius: 14, height: 52, display: "flex", alignItems: "center", justifyContent: "center", font: "800 14px/1 Archivo", cursor: "pointer" }}
         >
           Zufallsgegner
         </div>
         <div
           onClick={startPicking}
+          className="sd-tap"
           style={{ flex: 1, border: "1px solid rgba(243,234,218,.25)", color: "#F3EADA", borderRadius: 14, height: 52, display: "flex", alignItems: "center", justifyContent: "center", font: "800 14px/1 Archivo", cursor: "pointer" }}
         >
           Freund fordern
         </div>
+      </div>
+
+      <div
+        onClick={() => navigate("/duelle/lokal")}
+        className="sd-tap"
+        style={{ border: "1px dashed rgba(243,234,218,.22)", borderRadius: 14, padding: 14, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", marginBottom: 20 }}
+      >
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(243,234,218,.06)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+            <circle cx="8" cy="8" r="3" stroke="#F3EADA" strokeWidth={1.8} />
+            <circle cx="17" cy="9" r="2.4" stroke="#F3EADA" strokeWidth={1.6} opacity={0.6} />
+            <path d="M2.5 19c0-3.2 2.5-5.3 5.5-5.3s5.5 2.1 5.5 5.3" stroke="#F3EADA" strokeWidth={1.8} strokeLinecap="round" />
+            <path d="M14.5 14.3c2.6.2 4.5 1.9 4.5 4.7" stroke="#F3EADA" strokeWidth={1.6} strokeLinecap="round" opacity={0.6} />
+          </svg>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ font: "800 13.5px/1 Archivo" }}>Lokal spielen</div>
+          <div style={{ font: "400 10.5px/1.4 'DM Mono',monospace", color: "rgba(243,234,218,.5)", marginTop: 5 }}>
+            2–8 Spieler, ein Gerät reihum
+          </div>
+        </div>
+        <div style={{ font: "600 15px/1 Archivo", color: "#F0B429" }}>→</div>
       </div>
 
       {picking && (

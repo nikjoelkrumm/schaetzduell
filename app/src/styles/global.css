@@ -57,7 +57,7 @@ button:focus-visible {
 @keyframes sd-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(14px) scale(0.985);
   }
   to {
     opacity: 1;
@@ -83,9 +83,61 @@ button:focus-visible {
     opacity: 1;
   }
 }
+@keyframes sd-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes sd-confetti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), 480px) rotate(var(--rotate));
+  }
+}
+@keyframes sd-slide-x {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 
 .screen-in {
-  animation: sd-in 0.3s ease both;
+  animation: sd-in 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.sd-pop {
+  animation: sd-pop 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+}
+
+.sd-slide-x {
+  animation: sd-slide-x 0.28s ease both;
+}
+
+.sd-bar-fill {
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.sd-tap {
+  transition: transform 0.12s ease;
+}
+.sd-tap:active {
+  transform: scale(0.96);
 }
 
 /* App shell — full-bleed on phones, a centered mobile-width column on

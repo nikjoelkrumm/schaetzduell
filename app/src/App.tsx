@@ -10,6 +10,7 @@ import Home from "./screens/Home";
 import GuessFlow from "./screens/GuessFlow";
 import Practice from "./screens/Practice";
 import Duels from "./screens/Duels";
+import LocalDuel from "./screens/LocalDuel";
 import DuelDetail from "./screens/DuelDetail";
 import Friends from "./screens/Friends";
 import Profile from "./screens/Profile";
@@ -58,6 +59,7 @@ function Shell() {
           <Route path="/uebung" element={<RequireAuth><Practice /></RequireAuth>} />
           <Route path="/uebung/spielen" element={<RequireAuth><GuessFlow mode="practice" /></RequireAuth>} />
           <Route path="/duelle" element={<RequireAuth><Duels /></RequireAuth>} />
+          <Route path="/duelle/lokal" element={<RequireAuth><LocalDuel /></RequireAuth>} />
           <Route path="/duelle/:duelId" element={<RequireAuth><DuelDetail /></RequireAuth>} />
           <Route
             path="/duelle/:duelId/runde/:roundId"

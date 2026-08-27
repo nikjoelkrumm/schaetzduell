@@ -97,7 +97,7 @@ export default function Profile() {
           <div style={{ font: "400 11px/1 'DM Mono',monospace", color: "rgba(243,234,218,.5)" }}>{profile.xp} / {xpNext} XP</div>
         </div>
         <div style={{ height: 8, borderRadius: 4, background: "rgba(243,234,218,.14)", marginTop: 12, overflow: "hidden" }}>
-          <div style={{ height: 8, borderRadius: 4, background: "#F0B429", width: `${xpPct}%` }} />
+          <div className="sd-bar-fill" style={{ height: 8, borderRadius: 4, background: "#F0B429", width: `${xpPct}%` }} />
         </div>
       </div>
 

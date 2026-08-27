@@ -160,6 +160,21 @@ RPC/trigger-only; a color swatch choice has no security surface to protect.
 alongside `name` so avatars show up for opponents and friends, not just on
 your own profile.
 
+## Local pass-and-play duel (2–8 players, one device)
+
+The original `schaetzduell-verbessert.html` build's other multiplayer mode —
+everyone crowded around one phone, passing it around, no accounts — was
+dropped in the initial redesign in favor of purely async online duels, then
+added back after the fact on request. It lives entirely in
+`LocalDuel.tsx` and makes **no backend calls at all**: no `xp`, `streak`, or
+league impact, same as practice mode, and for the same reason — the design's
+`quiz-data` package already shipped the full question set (with answers)
+to the client for exactly this mode in the original build, so there's
+nothing to protect server-side here that isn't already protected for the
+weekly/duel modes. Scoring is also the original mechanic, not the
+percentage-based `score_guess()` formula: whoever's absolute guess is
+closest gets one point (ties all score), first to 5 or 10 points wins.
+
 ## Local-save migration — changed from the original sketch
 
 The design's rpc list includes `import_local_save(json)` for carrying a

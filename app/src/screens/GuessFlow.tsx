@@ -306,6 +306,7 @@ export default function GuessFlow({ mode }: { mode: Mode }) {
         </div>
         <div
           onClick={() => navigate(mode === "week" ? "/home" : "/uebung")}
+          className="sd-tap"
           style={{ background: "#F0B429", color: "#0D2B2F", borderRadius: 14, padding: "14px 28px", font: "800 15px/1 Archivo", cursor: "pointer" }}
         >
           {mode === "week" ? "Zurück zur Startseite" : "Zurück zur Übung"}
@@ -325,7 +326,7 @@ export default function GuessFlow({ mode }: { mode: Mode }) {
         <div style={{ font: "600 15px/1.35 Archivo", color: "rgba(243,234,218,.7)", marginBottom: 30 }}>{question.text}</div>
 
         <div style={{ textAlign: "center" }}>
-          <div style={{ font: "900 66px/1 'Archivo Black',Archivo", letterSpacing: "-.04em", color: b.tint }}>+{reveal.score}</div>
+          <div key={reveal.score} className="sd-pop" style={{ font: "900 66px/1 'Archivo Black',Archivo", letterSpacing: "-.04em", color: b.tint }}>+{reveal.score}</div>
           <div style={{ font: "900 13px/1 'Archivo Black',Archivo", letterSpacing: ".1em", textTransform: "uppercase", color: b.tint, marginTop: 12 }}>
             {b.label}
           </div>
@@ -384,6 +385,7 @@ export default function GuessFlow({ mode }: { mode: Mode }) {
           </div>
           <div
             onClick={next}
+            className="sd-tap"
             style={{ flex: 1, background: "#F0B429", color: "#0D2B2F", borderRadius: 14, height: 56, display: "flex", alignItems: "center", justifyContent: "center", font: "800 15.5px/1 Archivo", cursor: "pointer" }}
           >
             {isDuel ? "Zur Duell-Übersicht" : "Nächste Frage"}
@@ -451,6 +453,7 @@ export default function GuessFlow({ mode }: { mode: Mode }) {
       </div>
       <div
         onClick={submit}
+        className="sd-tap"
         style={{
           background: hasEntry ? "#F0B429" : "rgba(240,180,41,.35)",
           color: "#0D2B2F",

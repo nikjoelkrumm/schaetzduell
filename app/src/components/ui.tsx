@@ -56,6 +56,7 @@ export function Btn({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      className="sd-tap"
       style={{
         border: "none",
         borderRadius: 14,
